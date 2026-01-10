@@ -1,0 +1,11 @@
+category: brainstorming
+complexity: medium
+description: 从不同时代角度分析问题
+estimated_time: 15-25分钟
+id: time_shift
+name: 时间转移法
+prompt_template: 将问题置于不同的时间背景下思考：'1995年如何解决？''2030年会怎样？'探索时间维度的影响。
+tags:
+- brainstorming
+- BMAD方法论
+- 结构化分析

@@ -1,0 +1,56 @@
+# narrow_door.yaml
+id: narrow_door
+name: 窄门创业机会发现报告
+icon: 🚪
+tags: [创业机会, 窄门战略, Zero to Sold, 利基市场, AI垂直应用]
+description: 结合《Zero to Sold》与窄门战略，发现被大厂忽视但具有高支付意愿的垂直行业AI创业机会
+chapter_count: 7
+chapters:
+  - "1.0 执行摘要与核心发现"
+  - "2.0 全域扫描与受众识别 (Audience First)"
+  - "3.0 痛点下钻与自建系统搜索 (Problem Deep-dive)"
+  - "4.0 护城河与窄门验证 (Moat Analysis)"
+  - "5.0 五大创业方向详解"
+  - "6.0 Zero to Sold 框架验证"
+  - "7.0 风险评估与下一步行动"
+recommended_keywords: 
+  - 创业
+  - 窄门
+  - 利基
+  - 垂直
+  - AI应用
+  - Zero to Sold
+  - 蓝海
+  - 机会
+  - 方向
+  - MRR
+  - SaaS
+
+# 推荐搭配的分析方法
+recommended_methods:
+  - first_principles    # 第一性原理 - 回归用户真实需求
+  - five_whys          # 五个为什么 - 深挖痛点根因
+  - red_blue_team      # 红队蓝队 - 商业可持续性辩论
+  - stakeholder_roundtable  # 利益相关者圆桌 - 多Agent视角
+  - resource_constraint    # 资源约束 - 微型团队可行性
+
+# 特殊指令 - 注入到 Agent prompt
+special_instructions: |
+  ## 窄门战略分析框架
+  
+  ### 核心原则
+  1. **Audience First (受众优先)**: 先找到被忽视的垂直群体，再设计产品
+  2. **金发姑娘区**: 市场规模 MRR 5k-30k，足以养活微型团队但不吸引大厂
+  3. **自建系统信号**: 用户被迫用 Excel/手动记录/原始SOP = 高支付意愿
+  4. **窄门护城河**: 行业暗知识 + 私有数据整合，而非 API 套壳
+  
+  ### 搜索指令
+  - Query Agent: 扫描小红书、抖音、Reddit、V2EX、L站，寻找对通用AI工具不满的垂直行业
+  - Media Agent: 提取视频评论中的真实抱怨和期待
+  - Insight Agent: 下钻数百万条评论，识别"混乱Excel"、"手动记录"等支付意愿信号
+  
+  ### 输出要求
+  - 必须输出 5 个明确的创业方向
+  - 每个方向必须包含：受众定义、核心痛点、现有低效系统、窄门理由
+  - 必须有 Zero to Sold 框架验证
+  - 必须有风险评估和下一步行动

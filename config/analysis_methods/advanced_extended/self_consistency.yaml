@@ -1,0 +1,11 @@
+category: advanced
+complexity: medium
+description: 多次生成取共识
+estimated_time: 15-25分钟
+id: self_consistency
+name: 自一致性验证
+prompt_template: 通过多次独立分析同一问题，比较结果的一致性，提高结论的可靠性。
+tags:
+- advanced
+- BMAD方法论
+- 结构化分析

@@ -1,0 +1,11 @@
+category: advanced
+complexity: medium
+description: 评估内容是否服务于目标
+estimated_time: 15-25分钟
+id: goal_alignment
+name: 目标对齐评估
+prompt_template: 持续评估分析内容是否与既定目标保持一致，确保每个部分都为实现目标服务。
+tags:
+- advanced
+- BMAD方法论
+- 结构化分析

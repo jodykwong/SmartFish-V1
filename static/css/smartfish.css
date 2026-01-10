@@ -1,0 +1,341 @@
+/* SmartFish 样式 - Story 2-3, 2-4, 3-3, 3-4 */
+
+/* 模板选择区域 */
+.smartfish-section {
+    margin: 20px 0;
+    padding: 15px;
+    background: #fafafa;
+    border-radius: 8px;
+}
+
+.smartfish-section-title {
+    font-size: 16px;
+    font-weight: 500;
+    margin-bottom: 15px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+/* 模板卡片网格 */
+.template-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 12px;
+}
+
+.template-card {
+    background: white;
+    border: 2px solid #e8e8e8;
+    border-radius: 8px;
+    padding: 12px;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.template-card:hover {
+    border-color: #1890ff;
+    box-shadow: 0 2px 8px rgba(24, 144, 255, 0.15);
+}
+
+.template-card.selected {
+    border-color: #1890ff;
+    background: #e6f7ff;
+}
+
+.template-card-icon {
+    font-size: 24px;
+    margin-bottom: 8px;
+}
+
+.template-card-name {
+    font-size: 14px;
+    font-weight: 500;
+    margin-bottom: 4px;
+}
+
+.template-card-tags {
+    font-size: 12px;
+    color: #666;
+    margin-bottom: 8px;
+}
+
+.template-card-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.template-card-chapters {
+    font-size: 12px;
+    color: #999;
+}
+
+.template-preview-btn {
+    font-size: 12px;
+    color: #1890ff;
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 2px 8px;
+}
+
+.template-preview-btn:hover {
+    background: #e6f7ff;
+    border-radius: 4px;
+}
+
+.recommend-badge {
+    display: inline-block;
+    font-size: 11px;
+    color: #52c41a;
+    margin-left: 8px;
+}
+
+/* 模板预览弹窗 */
+.modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+}
+
+.modal-content {
+    background: white;
+    border-radius: 8px;
+    width: 90%;
+    max-width: 600px;
+    max-height: 80vh;
+    overflow: auto;
+}
+
+.modal-header {
+    padding: 16px 20px;
+    border-bottom: 1px solid #e8e8e8;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.modal-title {
+    font-size: 18px;
+    font-weight: 500;
+}
+
+.modal-close {
+    font-size: 20px;
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: #999;
+}
+
+.modal-body {
+    padding: 20px;
+}
+
+.modal-footer {
+    padding: 12px 20px;
+    border-top: 1px solid #e8e8e8;
+    display: flex;
+    justify-content: flex-end;
+    gap: 12px;
+}
+
+.chapter-tree {
+    font-size: 14px;
+    line-height: 1.8;
+}
+
+.chapter-tree li {
+    list-style: none;
+    position: relative;
+    padding-left: 20px;
+}
+
+.chapter-tree li::before {
+    content: "├──";
+    position: absolute;
+    left: 0;
+    color: #999;
+}
+
+.chapter-tree li:last-child::before {
+    content: "└──";
+}
+
+/* 分析方法选择器 */
+.method-selector {
+    border: 1px solid #e8e8e8;
+    border-radius: 8px;
+    overflow: hidden;
+}
+
+.method-selector-header {
+    padding: 12px 16px;
+    background: #fafafa;
+    cursor: pointer;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.method-selector-body {
+    padding: 16px;
+    display: none;
+}
+
+.method-selector.expanded .method-selector-body {
+    display: block;
+}
+
+.method-tabs {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 16px;
+}
+
+.method-tab {
+    padding: 6px 12px;
+    border: 1px solid #e8e8e8;
+    border-radius: 4px;
+    background: white;
+    cursor: pointer;
+    font-size: 13px;
+}
+
+.method-tab.active {
+    background: #1890ff;
+    color: white;
+    border-color: #1890ff;
+}
+
+.method-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+    gap: 8px;
+}
+
+.method-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px;
+    border-radius: 4px;
+}
+
+.method-item:hover {
+    background: #f5f5f5;
+}
+
+.method-item input[type="checkbox"] {
+    margin: 0;
+}
+
+.method-item label {
+    font-size: 13px;
+    cursor: pointer;
+    flex: 1;
+}
+
+.method-help {
+    font-size: 12px;
+    color: #999;
+    cursor: help;
+    position: relative;
+}
+
+/* 方法详情提示 */
+.method-tooltip {
+    position: absolute;
+    bottom: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    background: #333;
+    color: white;
+    padding: 12px;
+    border-radius: 6px;
+    font-size: 12px;
+    width: 250px;
+    z-index: 100;
+    display: none;
+}
+
+.method-help:hover .method-tooltip {
+    display: block;
+}
+
+.method-tooltip::after {
+    content: "";
+    position: absolute;
+    top: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    border: 6px solid transparent;
+    border-top-color: #333;
+}
+
+/* 已选方法摘要 */
+.selected-methods {
+    margin-top: 12px;
+    padding: 8px 12px;
+    background: #e6f7ff;
+    border-radius: 4px;
+    font-size: 13px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.clear-methods-btn {
+    font-size: 12px;
+    color: #1890ff;
+    background: none;
+    border: none;
+    cursor: pointer;
+}
+
+/* 按钮样式 */
+.btn-primary {
+    background: #1890ff;
+    color: white;
+    border: none;
+    padding: 8px 16px;
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+.btn-primary:hover {
+    background: #40a9ff;
+}
+
+.btn-default {
+    background: white;
+    color: #333;
+    border: 1px solid #d9d9d9;
+    padding: 8px 16px;
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+.btn-default:hover {
+    border-color: #1890ff;
+    color: #1890ff;
+}
+
+/* 响应式 */
+@media (max-width: 768px) {
+    .template-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .method-grid {
+        grid-template-columns: 1fr 1fr;
+    }
+}

@@ -1,0 +1,48 @@
+id: scamper
+name: SCAMPER方法
+category: brainstorming
+icon: 🔄
+short_description: 通过替代/合并/调整/修改/另用/消除/重排激发创新思维
+full_description: |
+  SCAMPER是一种创新思维技法，通过七个动词引导思考：
+  S - Substitute (替代)：能否用其他东西替代？
+  C - Combine (合并)：能否与其他东西合并？
+  A - Adapt (调整)：能否调整适应其他用途？
+  M - Modify (修改)：能否放大、缩小或改变？
+  P - Put to other uses (另用)：能否用于其他目的？
+  E - Eliminate (消除)：能否去掉某些部分？
+  R - Reverse/Rearrange (重排)：能否重新排列或颠倒？
+suitable_for: [产品创新, 流程改进, 创意生成, 解决方案优化]
+prompt_template: |
+  请使用SCAMPER方法分析"{topic}"：
+
+  🔄 S - Substitute (替代)：
+  - 能否用其他材料、方法、人员替代现有的？
+  - 有什么可以替代的选择？
+
+  🤝 C - Combine (合并)：
+  - 能否与其他产品、服务、想法合并？
+  - 合并后会产生什么新价值？
+
+  🎯 A - Adapt (调整)：
+  - 能否调整以适应其他环境或需求？
+  - 从其他领域能学到什么？
+
+  ⚡ M - Modify (修改)：
+  - 能否放大、缩小、加强、减弱？
+  - 改变形状、颜色、功能会如何？
+
+  🌟 P - Put to other uses (另用)：
+  - 还能用于其他什么目的？
+  - 不同用户群体如何使用？
+
+  ✂️ E - Eliminate (消除)：
+  - 能否简化、减少、去掉某些部分？
+  - 什么是非必需的？
+
+  🔀 R - Reverse/Rearrange (重排)：
+  - 能否颠倒顺序或重新排列？
+  - 反向思考会得出什么结论？
+
+  💡 创新方案总结：
+  [基于以上分析提出具体的创新建议]

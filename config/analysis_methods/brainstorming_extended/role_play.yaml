@@ -1,0 +1,11 @@
+category: brainstorming
+complexity: medium
+description: 从不同利益相关者角度思考
+estimated_time: 15-25分钟
+id: role_play
+name: 角色扮演法
+prompt_template: 扮演不同的利益相关者角色，从他们的视角分析问题，理解不同立场的需求和关切。
+tags:
+- brainstorming
+- BMAD方法论
+- 结构化分析

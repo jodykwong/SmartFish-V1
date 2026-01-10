@@ -1,0 +1,11 @@
+category: advanced
+complexity: medium
+description: PO/SM/Dev/QA多角色轮换
+estimated_time: 15-25分钟
+id: agile_perspectives
+name: 敏捷团队视角
+prompt_template: 从产品负责人、Scrum Master、开发者、测试工程师等不同角色的视角分析问题。
+tags:
+- advanced
+- BMAD方法论
+- 结构化分析

@@ -1,0 +1,11 @@
+category: advanced
+complexity: medium
+description: 结合角色扮演与模式匹配
+estimated_time: 15-25分钟
+id: role_pattern_hybrid
+name: 角色模式混合法
+prompt_template: 将角色扮演与模式识别相结合，既保持特定视角的深度，又运用通用模式的指导。
+tags:
+- advanced
+- BMAD方法论
+- 结构化分析

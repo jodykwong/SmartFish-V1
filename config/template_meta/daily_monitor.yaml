@@ -1,0 +1,12 @@
+id: daily_monitor
+name: 日常或定期舆情监测报告
+icon: 📅
+tags: [日常监测, 定期报告]
+description: 日常或定期的舆情监测报告，适用于周报、月报等常规舆情跟踪分析
+chapter_count: 4
+chapters:
+  - "1.0 监测周期概况"
+  - "2.0 热点事件汇总"
+  - "3.0 舆情趋势分析"
+  - "4.0 下期关注重点"
+recommended_keywords: [日常, 监测, 周报, 月报]

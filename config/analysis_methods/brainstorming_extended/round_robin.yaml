@@ -1,0 +1,11 @@
+category: brainstorming
+complexity: medium
+description: 每个角度依次贡献想法，确保全面覆盖
+estimated_time: 15-25分钟
+id: round_robin
+name: 轮流贡献法
+prompt_template: 从多个不同角度轮流分析问题，确保每个视角都得到充分表达和探讨。
+tags:
+- brainstorming
+- BMAD方法论
+- 结构化分析

@@ -1,0 +1,11 @@
+category: advanced
+complexity: medium
+description: 检查内容结构和依赖关系
+estimated_time: 15-25分钟
+id: logic_flow
+name: 逻辑流程分析
+prompt_template: 分析论证的逻辑结构，检查前提与结论的关系，确保推理过程的严密性和连贯性。
+tags:
+- advanced
+- BMAD方法论
+- 结构化分析

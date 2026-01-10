@@ -1,0 +1,95 @@
+# Sprint Status - SmartFish
+# generated: 2026-01-10
+# project: SmartFish
+# project_key: smartfish-v1
+# tracking_system: file-system
+# story_location: docs/stories
+
+# STATUS DEFINITIONS:
+# ==================
+# Epic Status:
+#   - backlog: Epic not yet started
+#   - in-progress: Epic actively being worked on
+#   - done: All stories in epic completed
+#
+# Story Status:
+#   - backlog: Story only exists in epic file
+#   - ready-for-dev: Story file created, ready for development
+#   - in-progress: Developer actively working on implementation
+#   - review: Implementation complete, ready for review
+#   - done: Story completed
+#
+# Retrospective Status:
+#   - optional: Can be completed but not required
+#   - done: Retrospective has been completed
+#
+# WORKFLOW NOTES:
+# ===============
+# - Mark epic as 'in-progress' when starting work on its first story
+# - SM typically creates next story ONLY after previous one is 'done' to incorporate learnings
+# - Dev moves story to 'review', then Dev runs code-review
+
+generated: 2026-01-10
+project: SmartFish
+project_key: smartfish-v1
+tracking_system: file-system
+story_location: docs/stories
+
+development_status:
+  # Epic 1: 配置基础设施 ✅
+  epic-1: done
+  1-1-config-loader: done
+  1-2-template-metadata: done
+  1-3-analysis-methods-config: done
+  epic-1-retrospective: optional
+
+  # Epic 2: 模板选择系统 ✅
+  epic-2: done
+  2-1-template-list-api: done
+  2-2-template-preview-api: done
+  2-3-template-card-component: done
+  2-4-template-preview-modal: done
+  epic-2-retrospective: optional
+
+  # Epic 3: 分析方法选择器 ✅
+  epic-3: done
+  3-1-method-list-api: done
+  3-2-method-detail-api: done
+  3-3-method-selector-component: done
+  3-4-method-tooltip: done
+  epic-3-retrospective: optional
+
+  # Epic 4: 需求验证系统 ✅
+  epic-4: done
+  4-1-requirement-validation-node: done
+  4-2-conclusion-section-enforcement: done
+  4-3-method-prompt-injection: done
+  epic-4-retrospective: optional
+
+  # Epic 5: 智能推荐 ✅
+  epic-5: done
+  5-1-template-recommendation-logic: done
+  5-2-recommendation-badge-display: done
+  epic-5-retrospective: optional
+
+# SPRINT SUMMARY:
+# ===============
+# Total Epics: 5
+# Total Stories: 16
+# Epics In Progress: 0
+# Stories Completed: 0
+#
+# RECOMMENDED SPRINT PLAN:
+# ========================
+# Sprint 1 (Week 1): Epic 1 - 配置基础设施
+#   - 1-1-config-loader (必须先完成)
+#   - 1-2-template-metadata (8 个 YAML 文件)
+#   - 1-3-analysis-methods-config (先创建 10 个核心方法)
+#
+# Sprint 2 (Week 2): Epic 2 + Epic 3 - UI 组件
+#   - 2-1 ~ 2-4 模板选择系统
+#   - 3-1 ~ 3-4 方法选择器
+#
+# Sprint 3 (Week 3): Epic 4 + Epic 5 - 集成
+#   - 4-1 ~ 4-3 需求验证系统
+#   - 5-1 ~ 5-2 智能推荐

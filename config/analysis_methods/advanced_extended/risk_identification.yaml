@@ -1,0 +1,11 @@
+category: advanced
+complexity: medium
+description: 从专业角度识别潜在风险
+estimated_time: 15-25分钟
+id: risk_identification
+name: 风险识别法
+prompt_template: 系统性地识别和评估潜在风险，包括技术风险、市场风险、运营风险等多个维度。
+tags:
+- advanced
+- BMAD方法论
+- 结构化分析

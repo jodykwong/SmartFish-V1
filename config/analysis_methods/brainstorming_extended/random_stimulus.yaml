@@ -1,0 +1,11 @@
+category: brainstorming
+complexity: medium
+description: 引入随机元素激发创意思维
+estimated_time: 15-25分钟
+id: random_stimulus
+name: 随机刺激法
+prompt_template: 引入随机的概念、词汇或场景，通过意外的关联激发新的思维路径和创意解决方案。
+tags:
+- brainstorming
+- BMAD方法论
+- 结构化分析

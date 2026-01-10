@@ -1,0 +1,11 @@
+category: brainstorming
+complexity: medium
+description: 挑战核心假设，重新构建思路
+estimated_time: 15-25分钟
+id: assumption_reversal
+name: 假设反转法
+prompt_template: 识别并挑战问题中的核心假设，通过反转这些假设来重新构建解决思路。
+tags:
+- brainstorming
+- BMAD方法论
+- 结构化分析

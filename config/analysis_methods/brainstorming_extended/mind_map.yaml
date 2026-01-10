@@ -1,0 +1,11 @@
+category: brainstorming
+complexity: medium
+description: 从中心概念向外发散，构建知识网络
+estimated_time: 15-25分钟
+id: mind_map
+name: 思维导图分析
+prompt_template: 使用思维导图方法，从核心主题出发，向外扩展相关概念、关联和子主题。构建完整的知识网络结构。
+tags:
+- brainstorming
+- BMAD方法论
+- 结构化分析

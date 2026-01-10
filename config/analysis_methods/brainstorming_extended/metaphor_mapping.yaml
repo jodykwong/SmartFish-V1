@@ -1,0 +1,11 @@
+category: brainstorming
+complexity: medium
+description: 用隐喻理解复杂概念
+estimated_time: 15-25分钟
+id: metaphor_mapping
+name: 隐喻映射法
+prompt_template: 使用隐喻和比喻来理解和解释复杂概念，通过形象化的表达促进理解和洞察。
+tags:
+- brainstorming
+- BMAD方法论
+- 结构化分析

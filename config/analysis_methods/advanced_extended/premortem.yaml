@@ -1,0 +1,11 @@
+category: advanced
+complexity: medium
+description: 假设失败，提前识别风险
+estimated_time: 15-25分钟
+id: premortem
+name: 事前复盘法
+prompt_template: 假设项目已经失败，回顾分析可能的失败原因，提前识别和预防潜在风险。
+tags:
+- advanced
+- BMAD方法论
+- 结构化分析

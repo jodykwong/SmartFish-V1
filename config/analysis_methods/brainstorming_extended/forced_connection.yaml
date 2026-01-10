@@ -1,0 +1,11 @@
+category: brainstorming
+complexity: medium
+description: 连接不相关概念寻找创新
+estimated_time: 15-25分钟
+id: forced_connection
+name: 强制关联法
+prompt_template: 强制连接看似不相关的概念、对象或想法，通过意外的关联发现新的解决方案。
+tags:
+- brainstorming
+- BMAD方法论
+- 结构化分析

@@ -1,0 +1,11 @@
+category: brainstorming
+complexity: medium
+description: 列出参数，探索组合可能性
+estimated_time: 15-25分钟
+id: morphological
+name: 形态分析法
+prompt_template: 将问题分解为多个独立参数，列出每个参数的可能取值，然后探索不同组合的可能性。
+tags:
+- brainstorming
+- BMAD方法论
+- 结构化分析

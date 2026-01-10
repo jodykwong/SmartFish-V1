@@ -1,0 +1,11 @@
+category: brainstorming
+complexity: medium
+description: 生成问题而非答案
+estimated_time: 15-25分钟
+id: question_storming
+name: 问题风暴法
+prompt_template: 专注于生成高质量的问题而不是答案，通过提出正确的问题来引导思考方向。
+tags:
+- brainstorming
+- BMAD方法论
+- 结构化分析

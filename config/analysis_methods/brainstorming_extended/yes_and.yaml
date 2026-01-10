@@ -1,0 +1,11 @@
+category: brainstorming
+complexity: medium
+description: 接受并扩展他人想法，促进协作创新
+estimated_time: 15-25分钟
+id: yes_and
+name: Yes And 构建法
+prompt_template: 采用'Yes, And...'的思维模式，在现有观点基础上进行扩展和深化，避免否定性思维。
+tags:
+- brainstorming
+- BMAD方法论
+- 结构化分析

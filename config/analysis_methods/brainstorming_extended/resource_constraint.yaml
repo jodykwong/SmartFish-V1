@@ -1,0 +1,11 @@
+category: brainstorming
+complexity: medium
+description: 在极限约束下寻找创意解决方案
+estimated_time: 15-25分钟
+id: resource_constraint
+name: 资源约束法
+prompt_template: 设定极端的资源约束条件（如只有10元和1小时），在限制中寻找创意和高效的解决方案。
+tags:
+- brainstorming
+- BMAD方法论
+- 结构化分析

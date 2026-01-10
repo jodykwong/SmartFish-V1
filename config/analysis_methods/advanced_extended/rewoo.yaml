@@ -1,0 +1,11 @@
+category: advanced
+complexity: medium
+description: 推理-观察-优化循环
+estimated_time: 15-25分钟
+id: rewoo
+name: ReWOO推理法
+prompt_template: 采用推理(Reasoning)-观察(Observation)-优化(Optimization)的循环方法，持续改进分析质量。
+tags:
+- advanced
+- BMAD方法论
+- 结构化分析

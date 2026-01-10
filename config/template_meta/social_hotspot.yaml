@@ -1,0 +1,13 @@
+id: social_hotspot
+name: 社会公共热点事件分析报告
+icon: 🔥
+tags: [社会热点, 公共事件]
+description: 针对社会公共热点事件的深度舆情分析，解读事件影响和社会反响
+chapter_count: 5
+chapters:
+  - "1.0 事件背景与发展脉络"
+  - "2.0 社会关注度分析"
+  - "3.0 公众观点与情感倾向"
+  - "4.0 媒体报道与传播特征"
+  - "5.0 社会影响评估"
+recommended_keywords: [热点, 社会, 公共, 事件]

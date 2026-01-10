@@ -1,0 +1,11 @@
+category: advanced
+complexity: medium
+description: 扮演批判角色挑战方案
+estimated_time: 15-25分钟
+id: devils_advocate
+name: 魔鬼代言人法
+prompt_template: 扮演魔鬼代言人的角色，对提出的方案进行批判性挑战，发现潜在的弱点和问题。
+tags:
+- advanced
+- BMAD方法论
+- 结构化分析

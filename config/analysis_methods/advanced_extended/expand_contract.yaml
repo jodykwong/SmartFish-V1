@@ -1,0 +1,11 @@
+category: advanced
+complexity: medium
+description: 根据受众调整内容深度
+estimated_time: 15-25分钟
+id: expand_contract
+name: 扩展收缩法
+prompt_template: 根据目标受众的需求，灵活调整分析的深度和广度，在宏观概览和细节深入之间找到平衡。
+tags:
+- advanced
+- BMAD方法论
+- 结构化分析

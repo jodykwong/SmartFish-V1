@@ -1,0 +1,11 @@
+category: brainstorming
+complexity: medium
+description: 提出挑衅性陈述激发新想法
+estimated_time: 15-25分钟
+id: provocation
+name: 挑衅技术(PO)
+prompt_template: 使用挑衅性操作(Provocative Operation)，提出看似不合理的陈述，通过打破常规思维激发创新。
+tags:
+- brainstorming
+- BMAD方法论
+- 结构化分析
