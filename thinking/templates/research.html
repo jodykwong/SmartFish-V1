@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>证据补强 - SmartFish</title>
+    <style>
+        body { font-family: -apple-system, "Noto Sans SC", sans-serif; margin: 20px; max-width: 800px; }
+        .form-group { margin-bottom: 20px; }
+        label { display: block; margin-bottom: 5px; font-weight: 600; }
+        select, textarea { width: 100%; padding: 10px; border: 1px solid #d9d9d9; border-radius: 4px; }
+        textarea { min-height: 100px; }
+        .btn { padding: 10px 20px; background: #1890ff; color: white; border: none; border-radius: 4px; cursor: pointer; }
+        .task-list { margin-top: 30px; }
+        .task-item { border: 1px solid #f0f0f0; border-radius: 8px; padding: 15px; margin-bottom: 15px; }
+        .task-status { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 12px; }
+        .status-pending { background: #d9d9d9; }
+        .status-running { background: #1890ff; color: white; }
+        .status-completed { background: #52c41a; color: white; }
+        .status-failed { background: #f5222d; color: white; }
+    </style>
+</head>
+<body>
+    <h1>证据补强</h1>
+    
+    <div class="form-group">
+        <label>选择Agent引擎</label>
+        <select id="engine">
+            <option value="QueryEngine">QueryEngine - 全域信息搜索</option>
+            <option value="MindSpider">MindSpider - 社媒爬取</option>
+            <option value="InsightEngine">InsightEngine - 数据库挖掘</option>
+            <option value="ReportEngine">ReportEngine - 证据摘要</option>
+        </select>
+    </div>
+    
+    <div class="form-group">
+        <label>研究问题</label>
+        <textarea id="query" placeholder="输入要研究的问题或关键词..."></textarea>
+    </div>
+    
+    <div class="form-group">
+        <label>任务类型</label>
+        <select id="taskType">
+            <option value="evidence_research">证据研究</option>
+            <option value="word_of_mouth">市场声音</option>
+            <option value="market_turn_review">市场复核</option>
+        </select>
+    </div>
+    
+    <button class="btn" onclick="createTask()">提交任务</button>
+    
+    <div class="task-list">
+        <h2>任务列表</h2>
+        <div id="tasks"></div>
+    </div>
+    
+    <script>
+        const entryId = new URLSearchParams(window.location.search).get('entry_id');
+        let tasks = [];
+        
+        async function createTask() {
+            const engine = document.getElementById('engine').value;
+            const query = document.getElementById('query').value;
+            const taskType = document.getElementById('taskType').value;
+            
+            if (!query) {
+                alert('请输入研究问题');
+                return;
+            }
+            
+            const res = await fetch(`/thinking/entries/${entryId}/research`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ engine, query, task_type: taskType })
+            });
+            
+            if (res.ok) {
+                alert('任务已提交！');
+                document.getElementById('query').value = '';
+                loadTasks();
+            } else {
+                const error = await res.json();
+                alert('提交失败: ' + error.error);
+            }
+        }
+        
+        async function loadTasks() {
+            const res = await fetch(`/thinking/entries/${entryId}/research`);
+            tasks = await res.json();
+            renderTasks();
+        }
+        
+        function renderTasks() {
+            if (tasks.length === 0) {
+                document.getElementById('tasks').innerHTML = '<p style="color: #999;">暂无任务</p>';
+                return;
+            }
+            
+            const html = tasks.map(task => `
+                <div class="task-item">
+                    <div>
+                        <strong>${task.engine}</strong>
+                        <span class="task-status status-${task.status}">${task.status}</span>
+                    </div>
+                    <div style="color: #666; margin: 10px 0;">${task.query}</div>
+                    <div style="font-size: 12px; color: #999;">
+                        创建时间: ${new Date(task.created_at).toLocaleString('zh-CN')}
+                    </div>
+                    ${task.status === 'completed' ? `
+                        <button class="btn" style="margin-top: 10px;" onclick="backfill(${task.id})">
+                            回填证据
+                        </button>
+                    ` : ''}
+                    ${task.error_message ? `
+                        <div style="color: #f5222d; margin-top: 10px;">
+                            错误: ${task.error_message}
+                        </div>
+                    ` : ''}
+                </div>
+            `).join('');
+            
+            document.getElementById('tasks').innerHTML = html;
+        }
+        
+        async function backfill(taskId) {
+            const res = await fetch(`/thinking/research/${taskId}/backfill`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ entry_id: entryId })
+            });
+            
+            if (res.ok) {
+                alert('证据已回填到条目！');
+            } else {
+                const error = await res.json();
+                alert('回填失败: ' + error.error);
+            }
+        }
+        
+        // 定期刷新任务状态
+        setInterval(loadTasks, 5000);
+        loadTasks();
+    </script>
+</body>
+</html>

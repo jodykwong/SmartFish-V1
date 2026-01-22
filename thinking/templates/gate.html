@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gate检查 - SmartFish</title>
+    <style>
+        body { font-family: -apple-system, "Noto Sans SC", sans-serif; margin: 20px; max-width: 800px; }
+        .progress { display: flex; gap: 10px; margin-bottom: 30px; }
+        .progress-step { flex: 1; height: 4px; background: #f0f0f0; border-radius: 2px; }
+        .progress-step.active { background: #1890ff; }
+        .layer { border: 1px solid #f0f0f0; border-radius: 8px; padding: 20px; margin-bottom: 20px; }
+        .layer-title { font-size: 18px; font-weight: 600; margin-bottom: 10px; }
+        .layer-desc { color: #666; margin-bottom: 15px; }
+        .signals { background: #fff7e6; padding: 10px; border-radius: 4px; margin-bottom: 15px; }
+        .signals li { margin: 5px 0; }
+        .options { display: flex; flex-direction: column; gap: 10px; }
+        .option { padding: 12px; border: 2px solid #f0f0f0; border-radius: 4px; cursor: pointer; }
+        .option:hover { border-color: #1890ff; }
+        .option.selected { border-color: #1890ff; background: #e6f7ff; }
+        .btn { padding: 10px 20px; background: #1890ff; color: white; border: none; border-radius: 4px; cursor: pointer; }
+        .btn:disabled { background: #d9d9d9; cursor: not-allowed; }
+        .result { padding: 20px; border-radius: 8px; margin-top: 20px; }
+        .result.pass { background: #f6ffed; border: 1px solid #b7eb8f; }
+        .result.fail { background: #fff1f0; border: 1px solid #ffa39e; }
+        .warning { background: #fffbe6; padding: 10px; border-radius: 4px; margin: 10px 0; }
+    </style>
+</head>
+<body>
+    <h1>决策宪法Gate检查</h1>
+    
+    <div class="progress">
+        <div class="progress-step active" id="progress-1"></div>
+        <div class="progress-step" id="progress-2"></div>
+        <div class="progress-step" id="progress-3"></div>
+        <div class="progress-step" id="progress-4"></div>
+    </div>
+    
+    <div id="layers"></div>
+    
+    <div style="display: flex; gap: 10px;">
+        <button class="btn" id="prevBtn" onclick="prevLayer()" style="display:none;">上一步</button>
+        <button class="btn" id="nextBtn" onclick="nextLayer()">下一步</button>
+        <button class="btn" id="submitBtn" onclick="submitGate()" style="display:none;">提交</button>
+    </div>
+    
+    <div id="result"></div>
+    
+    <script>
+        const entryId = new URLSearchParams(window.location.search).get('entry_id');
+        let currentLayer = 0;
+        const inputs = ['', '', '', ''];
+        
+        const layers = [
+            {
+                title: '层1: 人性依赖过滤器',
+                desc: '这个想法是否强依赖他人的意愿/行动/情绪/持续动力？',
+                signals: ['需要用户持续主动使用', '需要他人改变行为', '依赖情绪驱动'],
+                options: [
+                    { value: 'no', label: '否 - 不依赖他人', result: 'pass' },
+                    { value: 'partial_dependency', label: '部分 - 有一定依赖但可控', result: 'warning' },
+                    { value: 'strong_dependency', label: '是 - 强依赖他人', result: 'fail' }
+                ]
+            },
+            {
+                title: '层2: 价值自证过滤器',
+                desc: '是否需要反复向用户解释/教育市场才能理解价值？',
+                signals: ['需要长篇解释', '用户不理解为什么需要', '市场教育成本高'],
+                options: [
+                    { value: 'no', label: '否 - 价值自证', result: 'pass' },
+                    { value: 'needs_explanation', label: '是 - 需要反复解释', result: 'fail' }
+                ]
+            },
+            {
+                title: '层3: 反馈清洁度过滤器',
+                desc: '用户反馈是否可量化/可证伪？',
+                signals: ['只有主观感受', '无法量化', '不可证伪'],
+                options: [
+                    { value: 'yes', label: '是 - 反馈可量化', result: 'pass' },
+                    { value: 'partially_quantifiable', label: '部分 - 部分依赖主观判断', result: 'warning' },
+                    { value: 'not_falsifiable', label: '否 - 不可证伪', result: 'fail' }
+                ]
+            },
+            {
+                title: '层4: 角色消耗过滤器',
+                desc: '你的角色是"推进事情发生"还是"为判断负责"？',
+                signals: ['需要你持续推动', '需要你协调多方', '需要你解决冲突'],
+                options: [
+                    { value: 'no', label: '为判断负责', result: 'pass' },
+                    { value: 'need_push', label: '需要推进事情发生', result: 'warning' }
+                ]
+            }
+        ];
+        
+        function renderLayer(index) {
+            const layer = layers[index];
+            document.getElementById('layers').innerHTML = `
+                <div class="layer">
+                    <div class="layer-title">${layer.title}</div>
+                    <div class="layer-desc">${layer.desc}</div>
+                    <div class="signals">
+                        <strong>高危信号：</strong>
+                        <ul>${layer.signals.map(s => `<li>${s}</li>`).join('')}</ul>
+                    </div>
+                    <div class="options">
+                        ${layer.options.map(opt => `
+                            <div class="option ${inputs[index] === opt.value ? 'selected' : ''}" 
+                                 onclick="selectOption(${index}, '${opt.value}')">
+                                ${opt.label}
+                            </div>
+                        `).join('')}
+                    </div>
+                </div>
+            `;
+            
+            // 更新进度
+            for (let i = 0; i <= 3; i++) {
+                document.getElementById(`progress-${i+1}`).classList.toggle('active', i <= index);
+            }
+            
+            // 更新按钮
+            document.getElementById('prevBtn').style.display = index > 0 ? 'block' : 'none';
+            document.getElementById('nextBtn').style.display = index < 3 ? 'block' : 'none';
+            document.getElementById('submitBtn').style.display = index === 3 ? 'block' : 'none';
+        }
+        
+        function selectOption(layer, value) {
+            inputs[layer] = value;
+            renderLayer(layer);
+        }
+        
+        function nextLayer() {
+            if (!inputs[currentLayer]) {
+                alert('请选择一个选项');
+                return;
+            }
+            if (currentLayer < 3) {
+                currentLayer++;
+                renderLayer(currentLayer);
+            }
+        }
+        
+        function prevLayer() {
+            if (currentLayer > 0) {
+                currentLayer--;
+                renderLayer(currentLayer);
+            }
+        }
+        
+        async function submitGate() {
+            if (inputs.some(i => !i)) {
+                alert('请完成所有层的选择');
+                return;
+            }
+            
+            const res = await fetch(`/thinking/entries/${entryId}/gate`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ inputs })
+            });
+            
+            const result = await res.json();
+            displayResult(result);
+        }
+        
+        function displayResult(result) {
+            const isPass = result.decision === 'pass';
+            const html = `
+                <div class="result ${isPass ? 'pass' : 'fail'}">
+                    <h2>${isPass ? '✅ Gate检查通过' : '🚫 Gate检查未通过'}</h2>
+                    ${isPass ? '<p>恭喜！你的想法通过了Gate检查。</p>' : 
+                              `<p>你的想法在<strong>层${result.fail_level}</strong>被否决了。</p>
+                               <p><strong>原因：</strong>${result.fail_reason}</p>`}
+                    ${result.warnings && result.warnings.length > 0 ? `
+                        <div class="warning">
+                            <strong>⚠️ 警告：</strong>
+                            ${result.warnings.map(w => `<div>层${w.layer}: ${w.reason}</div>`).join('')}
+                        </div>
+                    ` : ''}
+                    <button class="btn" onclick="location.href='/thinking/entries/${entryId}'">
+                        返回条目
+                    </button>
+                </div>
+            `;
+            document.getElementById('result').innerHTML = html;
+            document.getElementById('layers').style.display = 'none';
+            document.getElementById('prevBtn').style.display = 'none';
+            document.getElementById('nextBtn').style.display = 'none';
+            document.getElementById('submitBtn').style.display = 'none';
+        }
+        
+        renderLayer(0);
+    </script>
+</body>
+</html>

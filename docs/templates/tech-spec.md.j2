@@ -1,0 +1,67 @@
+---
+title: {{ entry.title }}
+date: {{ date }}
+author: {{ user_name }}
+entry_id: {{ entry.id }}
+routing: {{ routing_info.routing }}
+---
+
+# Tech Spec: {{ entry.title }}
+
+## 目标
+
+{{ entry.problem }}
+
+## 背景
+
+**Signal:** {{ entry.signal }}
+
+**Target:** {{ entry.target_segment }}
+
+## 范围
+
+**In Scope:**
+- {{ entry.mva }}
+
+**Out of Scope:**
+- 待定义
+
+## 验收标准
+
+{{ entry.success_metric }}
+
+## 风险与止损
+
+{% if routing_info.reasons %}
+**路由评分:** {{ routing_info.score }}分 ({{ routing_info.routing }})
+
+**评分依据:**
+{% for reason in routing_info.reasons %}
+- {{ reason }}
+{% endfor %}
+{% endif %}
+
+{% if entry.constraints %}
+**约束条件:**
+{{ entry.constraints }}
+{% endif %}
+
+## 假设
+
+{{ entry.hypothesis }}
+
+{% if entry.evidence_needed %}
+## 证据需求
+
+{{ entry.evidence_needed }}
+{% endif %}
+
+## 时间表
+
+- 开始时间: {{ date }}
+- 目标完成: 48小时内
+
+## 影响面分析
+
+- 影响范围: {{ routing_info.reasons[0] if routing_info.reasons else '待评估' }}
+- 依赖: {{ entry.dependencies if entry.dependencies else '无' }}

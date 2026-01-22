@@ -1,0 +1,63 @@
+---
+title: {{ entry.title }}
+date: {{ date }}
+author: {{ user_name }}
+entry_id: {{ entry.id }}
+routing: {{ routing_info.routing }}
+---
+
+# Product Brief: {{ entry.title }}
+
+## Executive Summary
+
+{{ entry.problem }}
+
+## Problem Statement
+
+**Signal:** {{ entry.signal }}
+
+**Target Audience:** {{ entry.target_segment }}
+
+**Problem:** {{ entry.problem }}
+
+## Hypothesis
+
+{{ entry.hypothesis }}
+
+## Success Metrics
+
+{{ entry.success_metric }}
+
+## MVP Scope
+
+**Minimum Viable Action (48h):**
+{{ entry.mva }}
+
+{% if entry.constraints %}
+## Constraints
+
+{{ entry.constraints }}
+{% endif %}
+
+{% if entry.dependencies %}
+## Dependencies
+
+{{ entry.dependencies }}
+{% endif %}
+
+{% if entry.evidence_needed %}
+## Evidence Needed
+
+{{ entry.evidence_needed }}
+{% endif %}
+
+## Next Steps
+
+1. 验证假设
+2. 收集证据
+3. 制定详细计划
+
+---
+
+**Generated:** {{ date }}
+**Routing:** {{ routing_info.routing }} (Score: {{ routing_info.score }})

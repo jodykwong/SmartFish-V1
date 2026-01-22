@@ -1,0 +1,295 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Zero to Sold向导 - SmartFish</title>
+    <style>
+        body { font-family: -apple-system, "Noto Sans SC", sans-serif; margin: 20px; max-width: 900px; }
+        .wizard { display: flex; gap: 20px; margin-bottom: 30px; }
+        .wizard-step { flex: 1; padding: 15px; border: 2px solid #f0f0f0; border-radius: 8px; text-align: center; }
+        .wizard-step.active { border-color: #1890ff; background: #e6f7ff; }
+        .wizard-step.completed { border-color: #52c41a; background: #f6ffed; }
+        .section { border: 1px solid #f0f0f0; border-radius: 8px; padding: 20px; margin-bottom: 20px; }
+        .form-group { margin-bottom: 15px; }
+        label { display: block; margin-bottom: 5px; font-weight: 600; }
+        input, textarea { width: 100%; padding: 10px; border: 1px solid #d9d9d9; border-radius: 4px; }
+        textarea { min-height: 80px; }
+        .slider-group { display: flex; align-items: center; gap: 15px; }
+        .slider { flex: 1; }
+        .slider-value { min-width: 40px; font-weight: 600; color: #1890ff; }
+        .btn { padding: 10px 20px; background: #1890ff; color: white; border: none; border-radius: 4px; cursor: pointer; margin-right: 10px; }
+        .btn-secondary { background: #d9d9d9; color: #666; }
+        .score-result { background: #e6f7ff; padding: 20px; border-radius: 8px; margin: 20px 0; }
+        .score-number { font-size: 48px; font-weight: 600; color: #1890ff; }
+    </style>
+</head>
+<body>
+    <h1>Zero to Sold 方法论向导</h1>
+    
+    <div class="wizard">
+        <div class="wizard-step active" id="step-audience">1. Audience</div>
+        <div class="wizard-step" id="step-problem">2. Problem</div>
+        <div class="wizard-step" id="step-solution">3. Solution</div>
+        <div class="wizard-step" id="step-product">4. Product</div>
+    </div>
+    
+    <div id="content"></div>
+    
+    <script>
+        const entryId = new URLSearchParams(window.location.search).get('entry_id');
+        let currentStep = 1;
+        let data = {};
+        
+        const steps = {
+            1: renderAudienceStep,
+            2: renderProblemStep,
+            3: renderSolutionStep,
+            4: renderProductStep
+        };
+        
+        function renderAudienceStep() {
+            return `
+                <div class="section">
+                    <h2>Step 1: 定义目标受众（Audience）</h2>
+                    <p style="color: #666;">越具体越好，避免"所有人"</p>
+                    
+                    <div class="form-group">
+                        <label>Niche定义 *</label>
+                        <textarea id="audience" placeholder="例如：年收入<10万美元的独立开发者"></textarea>
+                        <small style="color: #999;">提示：增加条件细分，如地域、收入、技能等</small>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>规模估算方法</label>
+                        <textarea id="size_estimate" placeholder="如何估算这个群体的规模？"></textarea>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>支付能力与意愿</label>
+                        <textarea id="payability" placeholder="他们能支付吗？愿意支付吗？"></textarea>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>Tribes / Water Coolers</label>
+                        <textarea id="tribes" placeholder="他们在哪里聚集？论坛、群组、平台..."></textarea>
+                    </div>
+                    
+                    <button class="btn" onclick="nextStep()">下一步: Problem</button>
+                </div>
+            `;
+        }
+        
+        function renderProblemStep() {
+            return `
+                <div class="section">
+                    <h2>Step 2: 定义核心问题（Problem）</h2>
+                    
+                    <div class="form-group">
+                        <label>问题陈述 *</label>
+                        <textarea id="problem" placeholder="要解决什么问题？"></textarea>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>问题强度评分（Eisenhower框架）</label>
+                        
+                        <div class="slider-group">
+                            <label style="min-width: 80px;">重要性:</label>
+                            <input type="range" class="slider" id="importance" min="1" max="5" value="3" 
+                                   oninput="updateScore()">
+                            <span class="slider-value" id="importance-value">3</span>
+                        </div>
+                        
+                        <div class="slider-group">
+                            <label style="min-width: 80px;">紧迫性:</label>
+                            <input type="range" class="slider" id="urgency" min="1" max="5" value="3"
+                                   oninput="updateScore()">
+                            <span class="slider-value" id="urgency-value">3</span>
+                        </div>
+                        
+                        <div class="score-result" id="score-result" style="display:none;">
+                            <div class="score-number" id="score-number">9</div>
+                            <div id="score-priority"></div>
+                            <div id="score-action"></div>
+                        </div>
+                    </div>
+                    
+                    <button class="btn" onclick="scoreAndNext()">评分并继续</button>
+                    <button class="btn btn-secondary" onclick="prevStep()">上一步</button>
+                </div>
+            `;
+        }
+        
+        function renderSolutionStep() {
+            return `
+                <div class="section">
+                    <h2>Step 3: 讨论解决方案（Solution）</h2>
+                    
+                    <div class="form-group">
+                        <label>假设 *</label>
+                        <textarea id="hypothesis" placeholder="可证伪的假设：如果做X，那么Y会发生"></textarea>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>差异化</label>
+                        <textarea id="differentiation" placeholder="与现有解决方案有什么不同？"></textarea>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>关键假设</label>
+                        <textarea id="key_assumptions" placeholder="这个方案依赖哪些假设？"></textarea>
+                    </div>
+                    
+                    <button class="btn" onclick="nextStep()">下一步: Product</button>
+                    <button class="btn btn-secondary" onclick="prevStep()">上一步</button>
+                </div>
+            `;
+        }
+        
+        function renderProductStep() {
+            return `
+                <div class="section">
+                    <h2>Step 4: 进入产品实现（Product）</h2>
+                    
+                    <p>基于前面的Audience、Problem、Solution分析，现在可以生成实现工件。</p>
+                    
+                    <div style="background: #f0f0f0; padding: 15px; border-radius: 8px; margin: 20px 0;">
+                        <h3>可生成的工件：</h3>
+                        <ul>
+                            <li>✅ 访谈脚本（Interview Guide）</li>
+                            <li>✅ 市场研究报告（Market Research）</li>
+                            <li>✅ 市场转向复核（Market Review）</li>
+                        </ul>
+                    </div>
+                    
+                    <button class="btn" onclick="generateInterviewGuide()">生成访谈脚本</button>
+                    <button class="btn" onclick="generateMarketResearch()">生成市场研究</button>
+                    <button class="btn" onclick="generateMarketReview()">生成市场复核</button>
+                    <button class="btn btn-secondary" onclick="prevStep()">上一步</button>
+                </div>
+            `;
+        }
+        
+        function renderStep() {
+            document.getElementById('content').innerHTML = steps[currentStep]();
+            updateWizard();
+        }
+        
+        function updateWizard() {
+            ['audience', 'problem', 'solution', 'product'].forEach((step, i) => {
+                const el = document.getElementById(`step-${step}`);
+                el.classList.remove('active', 'completed');
+                if (i + 1 === currentStep) el.classList.add('active');
+                if (i + 1 < currentStep) el.classList.add('completed');
+            });
+        }
+        
+        function nextStep() {
+            if (currentStep < 4) {
+                saveCurrentStep();
+                currentStep++;
+                renderStep();
+            }
+        }
+        
+        function prevStep() {
+            if (currentStep > 1) {
+                currentStep--;
+                renderStep();
+            }
+        }
+        
+        function saveCurrentStep() {
+            // 保存当前步骤的数据
+            if (currentStep === 1) {
+                data.audience = document.getElementById('audience').value;
+                data.size_estimate = document.getElementById('size_estimate').value;
+                data.payability = document.getElementById('payability').value;
+                data.tribes = document.getElementById('tribes').value;
+            }
+        }
+        
+        function updateScore() {
+            const importance = document.getElementById('importance').value;
+            const urgency = document.getElementById('urgency').value;
+            
+            document.getElementById('importance-value').textContent = importance;
+            document.getElementById('urgency-value').textContent = urgency;
+            
+            const score = importance * urgency;
+            document.getElementById('score-number').textContent = score;
+            
+            let priority, action;
+            if (score >= 20) {
+                priority = '重要且紧急';
+                action = '✅ 优先处理';
+            } else if (score >= 15) {
+                priority = '重要不紧急';
+                action = '📅 计划处理';
+            } else if (score >= 10) {
+                priority = '紧急不重要';
+                action = '⚡ 委托或快速处理';
+            } else {
+                priority = '不重要不紧急';
+                action = '❌ 考虑放弃';
+            }
+            
+            document.getElementById('score-priority').textContent = '优先级: ' + priority;
+            document.getElementById('score-action').textContent = '建议: ' + action;
+            document.getElementById('score-result').style.display = 'block';
+        }
+        
+        async function scoreAndNext() {
+            const importance = document.getElementById('importance').value;
+            const urgency = document.getElementById('urgency').value;
+            
+            await fetch(`/thinking/entries/${entryId}/problem-score`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ importance: parseInt(importance), urgency: parseInt(urgency) })
+            });
+            
+            nextStep();
+        }
+        
+        async function generateInterviewGuide() {
+            const res = await fetch(`/thinking/entries/${entryId}/interview-guide`, {
+                method: 'POST'
+            });
+            
+            if (res.ok) {
+                const result = await res.json();
+                alert('访谈脚本已生成！\n' + result.filepath);
+            }
+        }
+        
+        async function generateMarketResearch() {
+            const res = await fetch(`/thinking/entries/${entryId}/market-research`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ research_data: data })
+            });
+            
+            if (res.ok) {
+                const result = await res.json();
+                alert('市场研究报告已生成！\n' + result.filepath);
+            }
+        }
+        
+        async function generateMarketReview() {
+            const res = await fetch(`/thinking/entries/${entryId}/market-review`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ review_data: {} })
+            });
+            
+            if (res.ok) {
+                const result = await res.json();
+                alert('市场复核已生成！\n' + result.filepath);
+            }
+        }
+        
+        renderStep();
+    </script>
+</body>
+</html>

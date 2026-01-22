@@ -1,0 +1,135 @@
+---
+title: 市场研究 - {{ entry.title }}
+date: {{ date }}
+entry_id: {{ entry.id }}
+---
+
+# 市场研究: {{ entry.title }}
+
+## Audience（目标受众）
+
+### Niche定义
+
+{{ entry.audience_definition if entry.audience_definition else '待定义' }}
+
+### 规模估算
+
+{{ entry.audience_size_estimate if entry.audience_size_estimate else '待估算' }}
+
+### 支付能力与意愿
+
+{{ entry.payability_notes if entry.payability_notes else '待评估' }}
+
+---
+
+## Problem（问题）
+
+### 问题陈述
+
+{{ entry.problem }}
+
+### 问题强度评分
+
+{% if entry.problem_intensity_score %}
+**综合得分：** {{ entry.problem_intensity_score }}/25
+
+**评估维度：**
+- 重要性：{{ research_data.importance if research_data.importance else '待评估' }}/5
+- 紧迫性：{{ research_data.urgency if research_data.urgency else '待评估' }}/5
+
+**优先级：** {{ research_data.priority if research_data.priority else '待确定' }}
+{% else %}
+待评分
+{% endif %}
+
+### 现有解决方案的不足
+
+{% if research_data.existing_solutions %}
+{{ research_data.existing_solutions }}
+{% else %}
+待调研
+{% endif %}
+
+---
+
+## Market Voice（市场声音）
+
+### Tribes / Water Coolers
+
+{{ entry.tribes_watercoolers if entry.tribes_watercoolers else '待定义' }}
+
+### 主要抱怨/摩擦点
+
+{% if research_data.complaints %}
+{% for complaint in research_data.complaints %}
+**{{ loop.index }}. {{ complaint.theme }}**
+- 频次：{{ complaint.frequency }}
+- 典型引用："{{ complaint.quote }}"
+- 来源：{{ complaint.source }}
+{% endfor %}
+{% else %}
+待采集
+{% endif %}
+
+### 语气倾向与强度
+
+{% if research_data.sentiment %}
+- 正向：{{ research_data.sentiment.positive }}%
+- 中性：{{ research_data.sentiment.neutral }}%
+- 负向：{{ research_data.sentiment.negative }}%
+{% else %}
+待分析
+{% endif %}
+
+---
+
+## Solution（解决方案）
+
+### 假设
+
+{{ entry.hypothesis }}
+
+### 差异化
+
+{% if research_data.differentiation %}
+{{ research_data.differentiation }}
+{% else %}
+待定义
+{% endif %}
+
+---
+
+## Evidence（证据链）
+
+### 证据需求
+
+{{ entry.evidence_needed if entry.evidence_needed else '待定义' }}
+
+### 已收集证据
+
+{% if research_data.evidence %}
+{{ research_data.evidence }}
+{% else %}
+待收集
+{% endif %}
+
+### 偏差与反证
+
+{% if research_data.bias_notes %}
+{{ research_data.bias_notes }}
+{% else %}
+待分析
+{% endif %}
+
+---
+
+## Next Steps
+
+1. 完成访谈（目标：{{ research_data.interview_target if research_data.interview_target else '10' }}个）
+2. 补充市场声音采集
+3. 验证假设
+4. 制定MVP计划
+
+---
+
+**生成时间：** {{ date }}

@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>思考列表 - SmartFish</title>
+    <style>
+        body { font-family: -apple-system, "Noto Sans SC", sans-serif; margin: 20px; }
+        .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+        .btn { padding: 10px 20px; background: #1890ff; color: white; border: none; border-radius: 4px; cursor: pointer; }
+        .entry-card { border: 1px solid #f0f0f0; border-radius: 8px; padding: 16px; margin-bottom: 16px; }
+        .entry-title { font-size: 18px; font-weight: 600; margin-bottom: 8px; }
+        .entry-meta { color: #666; font-size: 14px; }
+        .status { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 12px; }
+        .status-想法 { background: #d9d9d9; }
+        .status-评估中 { background: #faad14; color: white; }
+        .status-已落地 { background: #52c41a; color: white; }
+        .status-已否决 { background: #f5222d; color: white; }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>我的思考</h1>
+        <div>
+            <button class="btn" onclick="location.href='/thinking/new'">+ 新思考</button>
+        </div>
+    </div>
+    
+    <div id="entries"></div>
+    
+    <script>
+        async function loadEntries() {
+            const res = await fetch('/thinking/entries');
+            const data = await res.json();
+            
+            const container = document.getElementById('entries');
+            container.innerHTML = data.entries.map(entry => `
+                <div class="entry-card">
+                    <div class="entry-title" onclick="location.href='/thinking/entries/${entry.id}'" style="cursor: pointer;">
+                        ${entry.title}
+                    </div>
+                    <div class="entry-meta">
+                        <span class="status status-${entry.status}">${entry.status}</span>
+                        <span>${entry.created_at ? new Date(entry.created_at).toLocaleDateString('zh-CN') : ''}</span>
+                        ${entry.problem_intensity_score ? `<span style="color: #1890ff; margin-left: 10px;">强度: ${entry.problem_intensity_score}/25</span>` : ''}
+                    </div>
+                    <div style="margin-top: 10px;">
+                        <button class="btn" style="font-size: 12px; padding: 5px 10px;" 
+                                onclick="event.stopPropagation(); location.href='/thinking/zero-to-sold?entry_id=${entry.id}'">
+                            Zero to Sold 向导
+                        </button>
+                    </div>
+                </div>
+            `).join('');
+        }
+        
+        loadEntries();
+    </script>
+</body>
+</html>

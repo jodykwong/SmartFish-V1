@@ -62,6 +62,26 @@ if REPORT_ENGINE_AVAILABLE:
 else:
     logger.info("ReportEngine不可用，跳过接口注册")
 
+# 注册Thinking Blueprint
+try:
+    from database import db, init_db
+    init_db(app)
+    from thinking import thinking_bp
+    from thinking.routes import init_thinking_limiter
+    app.register_blueprint(thinking_bp)
+    init_thinking_limiter(app)
+    logger.info("Thinking模块已注册 (含速率限制)")
+except Exception as e:
+    logger.error(f"Thinking模块注册失败: {e}", exc_info=True)
+
+# 注册健康检查端点
+try:
+    from health import health_bp
+    app.register_blueprint(health_bp)
+    logger.info("健康检查端点已注册")
+except Exception as e:
+    logger.error(f"健康检查注册失败: {e}", exc_info=True)
+
 # 创建日志目录
 LOG_DIR = Path('logs')
 LOG_DIR.mkdir(exist_ok=True)

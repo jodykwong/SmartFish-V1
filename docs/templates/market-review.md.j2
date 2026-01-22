@@ -1,0 +1,161 @@
+---
+title: 市场转向复核 - {{ entry.title }}
+date: {{ date }}
+entry_id: {{ entry.id }}
+---
+
+# 市场转向复核: {{ entry.title }}
+
+## 复核周期
+
+**上次复核：** {{ review_data.last_review if review_data.last_review else '首次' }}
+**本次复核：** {{ date }}
+
+---
+
+## 市场信号检查
+
+### 1. 市场饱和/价格战
+
+{% if review_data.saturation %}
+**状态：** {{ review_data.saturation.status }}
+
+**观察：**
+{{ review_data.saturation.notes }}
+{% else %}
+**状态：** 待评估
+
+**检查项：**
+- 新进入者数量
+- 价格竞争程度
+- 同质化程度
+{% endif %}
+
+### 2. 市场收缩
+
+{% if review_data.contraction %}
+**状态：** {{ review_data.contraction.status }}
+
+**观察：**
+{{ review_data.contraction.notes }}
+{% else %}
+**状态：** 待评估
+
+**检查项：**
+- 买方/代理数量变化
+- 预算收紧迹象
+- 需求下降信号
+{% endif %}
+
+### 3. 监管变化
+
+{% if review_data.regulation %}
+**状态：** {{ review_data.regulation.status }}
+
+**观察：**
+{{ review_data.regulation.notes }}
+{% else %}
+**状态：** 待评估
+
+**检查项：**
+- 新法规出台
+- 合规成本变化
+- 行业政策调整
+{% endif %}
+
+### 4. 技术/结构变化
+
+{% if review_data.technology %}
+**状态：** {{ review_data.technology.status }}
+
+**观察：**
+{{ review_data.technology.notes }}
+{% else %}
+**状态：** 待评估
+
+**检查项：**
+- 新技术出现
+- 流程变革
+- 替代方案涌现
+{% endif %}
+
+---
+
+## 关键指标趋势
+
+{% if review_data.metrics %}
+### CAC（客户获取成本）
+
+- 当前：{{ review_data.metrics.cac_current }}
+- 趋势：{{ review_data.metrics.cac_trend }}
+- 变化：{{ review_data.metrics.cac_change }}
+
+### LTV（客户生命周期价值）
+
+- 当前：{{ review_data.metrics.ltv_current }}
+- 趋势：{{ review_data.metrics.ltv_trend }}
+- 变化：{{ review_data.metrics.ltv_change }}
+
+### LTV/CAC比率
+
+- 当前：{{ review_data.metrics.ratio }}
+- 健康阈值：>3
+- 状态：{{ review_data.metrics.ratio_status }}
+{% else %}
+**指标：** 待收集
+
+**建议追踪：**
+- CAC（客户获取成本）
+- LTV（客户生命周期价值）
+- 或替代指标（用户增长率、留存率等）
+{% endif %}
+
+---
+
+## 决策建议
+
+{% if review_data.decision %}
+**建议：** {{ review_data.decision }}
+
+**理由：**
+{{ review_data.decision_reason }}
+{% else %}
+**选项：**
+- ✅ **继续** - 市场健康，继续投入
+- ⚠️ **收缩** - 市场恶化，减少投入
+- 🔄 **转向** - 寻找新方向或细分市场
+- 🛑 **终止** - 市场不可行，及时止损
+{% endif %}
+
+---
+
+## 行动计划
+
+{% if review_data.actions %}
+{% for action in review_data.actions %}
+{{ loop.index }}. {{ action }}
+{% endfor %}
+{% else %}
+1. 持续监测关键指标
+2. 定期收集市场反馈
+3. 下次复核时间：{{ review_data.next_review if review_data.next_review else '3个月后' }}
+{% endif %}
+
+---
+
+## 历史记录
+
+{% if review_data.history %}
+{% for record in review_data.history %}
+**{{ record.date }}**
+- 决策：{{ record.decision }}
+- 关键变化：{{ record.changes }}
+{% endfor %}
+{% else %}
+首次复核
+{% endif %}
+
+---
+
+**生成时间：** {{ date }}
+**下次复核：** {{ review_data.next_review if review_data.next_review else '3个月后' }}

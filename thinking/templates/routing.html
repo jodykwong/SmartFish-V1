@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>选择路由 - SmartFish</title>
+    <style>
+        body { font-family: -apple-system, "Noto Sans SC", sans-serif; margin: 20px; max-width: 800px; }
+        .suggestion { background: #e6f7ff; padding: 15px; border-radius: 8px; margin-bottom: 20px; }
+        .routing-option { border: 2px solid #f0f0f0; border-radius: 8px; padding: 20px; margin-bottom: 15px; cursor: pointer; }
+        .routing-option:hover { border-color: #1890ff; }
+        .routing-option.selected { border-color: #1890ff; background: #e6f7ff; }
+        .routing-option.recommended { border-color: #52c41a; }
+        .badge { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 12px; margin-left: 10px; }
+        .badge.recommended { background: #52c41a; color: white; }
+        .routing-title { font-size: 18px; font-weight: 600; margin-bottom: 10px; }
+        .routing-desc { color: #666; margin-bottom: 10px; }
+        .routing-artifacts { color: #999; font-size: 14px; }
+        .btn { padding: 10px 20px; background: #1890ff; color: white; border: none; border-radius: 4px; cursor: pointer; }
+        .btn:disabled { background: #d9d9d9; cursor: not-allowed; }
+    </style>
+</head>
+<body>
+    <h1>选择工作流路由</h1>
+    
+    <div class="suggestion" id="suggestion"></div>
+    
+    <div id="options"></div>
+    
+    <button class="btn" id="generateBtn" onclick="generateArtifact()" disabled>生成工件</button>
+    
+    <script>
+        const entryId = new URLSearchParams(window.location.search).get('entry_id');
+        let selectedRouting = null;
+        let suggestedRouting = null;
+        
+        const routingOptions = [
+            {
+                type: 'Quick',
+                title: 'Quick (快速试验)',
+                desc: '适用场景：48小时内可完成的小试验，影响范围小，易回滚',
+                artifacts: 'tech-spec.md',
+                time: '5分钟'
+            },
+            {
+                type: 'Standard',
+                title: 'Standard (产品功能)',
+                desc: '适用场景：需要团队协作的产品功能，中等影响范围',
+                artifacts: 'product-brief.md, PRD.md',
+                time: '10分钟'
+            },
+            {
+                type: 'Enterprise',
+                title: 'Enterprise (复杂系统)',
+                desc: '适用场景：多团队协作、强合规要求，高影响范围',
+                artifacts: '完整文档包 + architecture.md',
+                time: '15分钟'
+            }
+        ];
+        
+        async function loadSuggestion() {
+            const res = await fetch(`/thinking/entries/${entryId}/routing`);
+            const data = await res.json();
+            
+            suggestedRouting = data.routing;
+            
+            document.getElementById('suggestion').innerHTML = `
+                <strong>💡 系统建议: ${data.routing}路由</strong><br>
+                评分: ${data.score}分<br>
+                原因: ${data.reasons.join(', ')}
+            `;
+            
+            renderOptions();
+        }
+        
+        function renderOptions() {
+            const html = routingOptions.map(opt => {
+                const isRecommended = opt.type === suggestedRouting;
+                return `
+                    <div class="routing-option ${isRecommended ? 'recommended' : ''} ${selectedRouting === opt.type ? 'selected' : ''}"
+                         onclick="selectRouting('${opt.type}')">
+                        <div class="routing-title">
+                            ${opt.title}
+                            ${isRecommended ? '<span class="badge recommended">推荐 ⭐</span>' : ''}
+                        </div>
+                        <div class="routing-desc">${opt.desc}</div>
+                        <div class="routing-artifacts">
+                            生成工件: ${opt.artifacts} | 预计时间: ${opt.time}
+                        </div>
+                    </div>
+                `;
+            }).join('');
+            
+            document.getElementById('options').innerHTML = html;
+        }
+        
+        function selectRouting(type) {
+            selectedRouting = type;
+            renderOptions();
+            document.getElementById('generateBtn').disabled = false;
+        }
+        
+        async function generateArtifact() {
+            if (!selectedRouting) return;
+            
+            const artifactType = selectedRouting === 'Quick' ? 'tech-spec' : 'product-brief';
+            
+            const res = await fetch(`/thinking/entries/${entryId}/artifacts`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ type: artifactType })
+            });
+            
+            if (res.ok) {
+                const artifact = await res.json();
+                alert('工件生成成功！');
+                location.href = `/thinking/entries/${entryId}`;
+            } else {
+                const error = await res.json();
+                alert('生成失败: ' + error.error);
+            }
+        }
+        
+        loadSuggestion();
+    </script>
+</body>
+</html>
