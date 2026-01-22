@@ -8,6 +8,7 @@ import eventlet
 eventlet.monkey_patch()
 
 import os
+from version_manager import version_manager
 import sys
 
 # 【修复】尽早设置环境变量，确保所有模块都使用无缓冲模式
