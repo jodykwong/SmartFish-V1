@@ -9,7 +9,7 @@
 
 from pathlib import Path
 from pydantic_settings import BaseSettings
-from pydantic import Field, ConfigDict
+from pydantic import Field, ConfigDict, model_validator
 from typing import Optional, Literal
 from loguru import logger
 
@@ -40,6 +40,11 @@ class Settings(BaseSettings):
     
     # ======================= LLM 相关 =======================
     # 我们的LLM模型API赞助商有：https://aihubmix.com/?aff=8Ds9，提供了非常全面的模型api
+    
+    # ================== 统一 OpenRouter 配置 ==================
+    # 如果设置了此项，所有未单独配置 API_KEY 的引擎将自动使用此 Key
+    OPENROUTER_API_KEY: Optional[str] = Field(None, description="统一的 OpenRouter API Key，所有引擎未单独配置时自动使用此 Key")
+    OPENROUTER_BASE_URL: str = Field("https://openrouter.ai/api/v1", description="OpenRouter API Base URL")
     
     # Insight Agent（推荐Kimi，申请地址：https://platform.moonshot.cn/）
     INSIGHT_ENGINE_API_KEY: Optional[str] = Field(None, description="Insight Agent（推荐 kimi-k2，官方申请地址：https://platform.moonshot.cn/）API 密钥，用于主 LLM。🚩请先按推荐配置申请并跑通，再根据需要调整 KEY、BASE_URL 与 MODEL_NAME。")
@@ -102,6 +107,32 @@ class Settings(BaseSettings):
     MAX_PARAGRAPHS: int = Field(6, description="最大段落数")
     SEARCH_TIMEOUT: int = Field(240, description="单次搜索请求超时")
     MAX_CONTENT_LENGTH: int = Field(500000, description="搜索最大内容长度")
+    
+    @model_validator(mode='after')
+    def apply_openrouter_fallback(self):
+        """
+        如果设置了统一的 OPENROUTER_API_KEY，则未单独配置的引擎自动使用该 Key 和 Base URL。
+        这样用户只需填写一个 API Key 即可。
+        """
+        if self.OPENROUTER_API_KEY:
+            # 需要自动回退的引擎列表：(api_key_attr, base_url_attr)
+            engines = [
+                ('INSIGHT_ENGINE_API_KEY', 'INSIGHT_ENGINE_BASE_URL'),
+                ('MEDIA_ENGINE_API_KEY', 'MEDIA_ENGINE_BASE_URL'),
+                ('QUERY_ENGINE_API_KEY', 'QUERY_ENGINE_BASE_URL'),
+                ('REPORT_ENGINE_API_KEY', 'REPORT_ENGINE_BASE_URL'),
+                ('MINDSPIDER_API_KEY', 'MINDSPIDER_BASE_URL'),
+                ('FORUM_HOST_API_KEY', 'FORUM_HOST_BASE_URL'),
+                ('KEYWORD_OPTIMIZER_API_KEY', 'KEYWORD_OPTIMIZER_BASE_URL'),
+            ]
+            
+            for api_key_attr, base_url_attr in engines:
+                # 如果该引擎未单独配置 API Key，则使用统一的 OpenRouter 配置
+                if not getattr(self, api_key_attr):
+                    object.__setattr__(self, api_key_attr, self.OPENROUTER_API_KEY)
+                    object.__setattr__(self, base_url_attr, self.OPENROUTER_BASE_URL)
+        
+        return self
     
     model_config = ConfigDict(
         env_file=ENV_FILE,

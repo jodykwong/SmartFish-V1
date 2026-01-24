@@ -5,7 +5,7 @@ import os
 os.environ["EVENTLET_NO_GREENDNS"] = "yes"
 
 import eventlet
-eventlet.monkey_patch()
+# eventlet.monkey_patch()  # 改用 threading 模式，不需要 monkey_patch
 
 import os
 from version_manager import version_manager
@@ -43,7 +43,7 @@ app = Flask(__name__)
 app.config['SECRET_KEY'] = 'Dedicated-to-creating-a-concise-and-versatile-public-opinion-analysis-platform'
 # 启用 Gzip 压缩
 Compress(app)
-socketio = SocketIO(app, cors_allowed_origins="*")
+socketio = SocketIO(app, cors_allowed_origins="*", async_mode='threading')
 
 # 安全响应头
 @app.after_request
@@ -1425,7 +1425,7 @@ if __name__ == '__main__':
     logger.info(f"Flask服务器已启动，访问地址: http://{HOST}:{PORT}")
     
     try:
-        socketio.run(app, host=HOST, port=PORT, debug=False)
+        socketio.run(app, host=HOST, port=PORT, debug=False, allow_unsafe_werkzeug=True)
     except KeyboardInterrupt:
         logger.info("\n正在关闭应用...")
         cleanup_processes()
