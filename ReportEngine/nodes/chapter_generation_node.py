@@ -1768,6 +1768,8 @@ class ChapterGenerationNode(BaseNode):
             text = normalized_run.get("text")
             if not isinstance(text, str):
                 text = "" if text is None else str(text)
+            # 检测并提取嵌套JSON中的纯文本
+            text = self._extract_nested_json_text(text)
             marks = normalized_run.get("marks")
             sanitized_marks, extra_text = self._sanitize_inline_marks(marks)
             normalized_run["marks"] = sanitized_marks
@@ -1823,6 +1825,61 @@ class ChapterGenerationNode(BaseNode):
         if lowered in {"break", "linebreak", "br"}:
             return self._LINE_BREAK_SENTINEL
         return self._INLINE_MARK_ALIASES.get(lowered, lowered)
+
+    def _extract_nested_json_text(self, text: str) -> str:
+        """
+        检测并提取嵌套JSON结构中的纯文本内容。
+        
+        LLM有时会生成类似这样的文本：
+        {"type": "doc", "content": [{"type": "paragraph", "content": [{"type": "text", "text": "实际内容"}]}]}
+        
+        应该提取为："实际内容"
+        """
+        if not text or not isinstance(text, str):
+            return text or ""
+        
+        stripped = text.strip()
+        if not (stripped.startswith("{") and stripped.endswith("}")):
+            return text
+        
+        try:
+            data = json.loads(stripped)
+            if not isinstance(data, dict):
+                return text
+            
+            # 检测是否为嵌套的doc/paragraph结构
+            doc_type = data.get("type")
+            if doc_type not in ("doc", "paragraph", "text"):
+                return text
+            
+            # 递归提取文本
+            extracted_texts = []
+            self._recursive_extract_text(data, extracted_texts)
+            
+            if extracted_texts:
+                return " ".join(extracted_texts)
+            return text
+        except (json.JSONDecodeError, Exception):
+            return text
+    
+    def _recursive_extract_text(self, node: Any, result: List[str]):
+        """递归提取JSON结构中的文本"""
+        if isinstance(node, str):
+            if node.strip():
+                result.append(node.strip())
+        elif isinstance(node, dict):
+            # 直接获取text字段
+            if "text" in node and isinstance(node["text"], str):
+                text_val = node["text"].strip()
+                # 确保不是嵌套JSON
+                if text_val and not (text_val.startswith("{") and text_val.endswith("}")):
+                    result.append(text_val)
+            # 递归处理content字段
+            if "content" in node:
+                self._recursive_extract_text(node["content"], result)
+        elif isinstance(node, list):
+            for item in node:
+                self._recursive_extract_text(item, result)
 
     def _extract_block_text(self, block: Dict[str, Any]) -> str:
         """优先从text/content等字段提取fallback文本"""
@@ -2011,7 +2068,11 @@ class ChapterGenerationNode(BaseNode):
             if cleaned.endswith("```"):
                 cleaned = cleaned[:-3]
             data = json.loads(cleaned.strip())
-            outline = data.get("outline", [])
+            # 兼容LLM直接返回列表的情况
+            if isinstance(data, list):
+                outline = data
+            else:
+                outline = data.get("outline", [])
             logger.info(f"[分段生成] 章节 {section.title} 提纲生成完成，共 {len(outline)} 个子节")
             return outline
         except (json.JSONDecodeError, KeyError) as exc:
@@ -2232,10 +2293,9 @@ class ChapterGenerationNode(BaseNode):
         )
 
         if not valid:
-            raise ChapterValidationError(
-                f"{section.title} 章节JSON校验失败: {'; '.join(errors[:5])}",
-                errors=errors,
-            )
+            # 分段生成校验失败时，回退到整体生成
+            logger.warning(f"[分段生成] 章节 {section.title} 校验失败，回退到整体生成")
+            return self.run(section, context, run_dir, stream_callback, **kwargs)
 
         return chapter_json
 

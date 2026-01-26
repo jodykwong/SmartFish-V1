@@ -221,7 +221,7 @@ def extract_query_from_reports(latest_files: Dict[str, str]) -> str:
     return "综合分析报告"
 
 
-def generate_report(reports: list[str], query: str, pdf_available: bool) -> Dict[str, Any]:
+def generate_report(reports: list[str], query: str, pdf_available: bool, template_name: str = "") -> Dict[str, Any]:
     """
     调用Report Engine生成报告
 
@@ -229,6 +229,7 @@ def generate_report(reports: list[str], query: str, pdf_available: bool) -> Dict
         reports: 报告内容列表
         query: 报告主题
         pdf_available: PDF功能是否可用
+        template_name: 指定的模板名称（可选）
 
     Returns:
         Dict[str, Any]: 包含生成结果的字典
@@ -290,7 +291,7 @@ def generate_report(reports: list[str], query: str, pdf_available: bool) -> Dict
             query=query,
             reports=reports,
             forum_logs="",  # 不使用论坛日志
-            custom_template="",  # 使用自动模板选择
+            custom_template=template_name if template_name else "",  # 使用指定模板或自动选择
             save_report=True,  # 自动保存报告
             stream_handler=stream_handler
         )
@@ -449,6 +450,13 @@ def parse_arguments():
         help='显示详细日志信息'
     )
 
+    parser.add_argument(
+        '--template',
+        type=str,
+        default='',
+        help='指定报告模板名称（如：窄门创业机会发现报告）'
+    )
+
     return parser.parse_args()
 
 
@@ -498,7 +506,7 @@ def main():
     logger.info(f"使用报告主题: {query}")
 
     # 步骤 3: 生成报告
-    result = generate_report(reports, query, pdf_available)
+    result = generate_report(reports, query, pdf_available, args.template)
 
     # 步骤 4: 保存文件
     logger.info("\n" + "=" * 70)
