@@ -204,6 +204,115 @@ class ChapterStorage:
         payloads.sort(key=lambda x: x.get("order", 0))
         return payloads
 
+    # ======== 断点续生成支持 ========
+
+    def load_run_session(self, run_id: str) -> Optional[Dict[str, object]]:
+        """
+        加载已有的报告会话，用于断点续生成。
+
+        参数:
+            run_id: 报告ID（如 report-26e44774）。
+
+        返回:
+            Dict: manifest数据，包含metadata和chapters状态；若不存在则返回None。
+        """
+        run_dir = self.base_dir / run_id
+        if not run_dir.exists():
+            return None
+        
+        manifest = self._read_manifest(run_dir)
+        self._manifests[self._key(run_dir)] = manifest
+        return manifest
+
+    def get_incomplete_chapters(self, run_id: str) -> List[Dict[str, object]]:
+        """
+        获取未完成的章节列表。
+
+        状态为 streaming 或 invalid 的章节被视为未完成。
+
+        参数:
+            run_id: 报告ID。
+
+        返回:
+            List[Dict]: 未完成章节的元数据列表。
+        """
+        run_dir = self.base_dir / run_id
+        manifest = self._manifests.get(self._key(run_dir)) or self._read_manifest(run_dir)
+        
+        incomplete = []
+        chapters = manifest.get("chapters", [])
+        for chapter in chapters:
+            status = chapter.get("status", "")
+            if status not in ("ready",):
+                incomplete.append(chapter)
+        
+        return sorted(incomplete, key=lambda x: x.get("order", 0))
+
+    def get_completed_chapters(self, run_id: str) -> List[Dict[str, object]]:
+        """
+        获取已完成的章节数据。
+
+        参数:
+            run_id: 报告ID。
+
+        返回:
+            List[Dict]: 已完成章节的JSON payload列表。
+        """
+        run_dir = self.base_dir / run_id
+        manifest = self._manifests.get(self._key(run_dir)) or self._read_manifest(run_dir)
+        
+        completed = []
+        chapters = manifest.get("chapters", [])
+        for chapter in chapters:
+            if chapter.get("status") == "ready":
+                json_path = chapter.get("files", {}).get("json")
+                if json_path:
+                    full_path = run_dir / json_path
+                    if full_path.exists():
+                        try:
+                            payload = json.loads(full_path.read_text(encoding="utf-8"))
+                            completed.append(payload)
+                        except json.JSONDecodeError:
+                            continue
+        
+        return sorted(completed, key=lambda x: x.get("order", 0))
+
+    def get_run_dir(self, run_id: str) -> Path:
+        """获取指定报告的运行目录路径。"""
+        return self.base_dir / run_id
+
+    def list_runs(self) -> List[Dict[str, object]]:
+        """
+        列出所有报告运行记录，用于选择续生成。
+
+        返回:
+            List[Dict]: 每个运行的摘要信息。
+        """
+        runs = []
+        for child in sorted(self.base_dir.iterdir(), reverse=True):
+            if not child.is_dir() or not child.name.startswith("report-"):
+                continue
+            manifest_path = child / "manifest.json"
+            if not manifest_path.exists():
+                continue
+            try:
+                manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+                chapters = manifest.get("chapters", [])
+                completed = sum(1 for c in chapters if c.get("status") == "ready")
+                runs.append({
+                    "run_id": child.name,
+                    "created_at": manifest.get("createdAt", ""),
+                    "query": manifest.get("metadata", {}).get("query", ""),
+                    "title": manifest.get("metadata", {}).get("title", ""),
+                    "total_chapters": len(chapters),
+                    "completed_chapters": completed,
+                    "status": "completed" if completed == len(chapters) and chapters else "incomplete"
+                })
+            except json.JSONDecodeError:
+                continue
+        
+        return runs
+
     # ======== 文件操作 ========
 
     @contextmanager

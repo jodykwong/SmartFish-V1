@@ -408,6 +408,166 @@ def save_markdown(document_ir_path: str, query: str) -> Optional[str]:
         return None
 
 
+def list_available_runs():
+    """列出所有可续生成的报告运行记录"""
+    from ReportEngine.core import ChapterStorage
+    
+    logger.info("=" * 70)
+    logger.info("可续生成的报告列表")
+    logger.info("=" * 70)
+    
+    storage = ChapterStorage("final_reports/chapters")
+    runs = storage.list_runs()
+    
+    if not runs:
+        logger.warning("没有找到任何报告运行记录")
+        return
+    
+    for i, run in enumerate(runs, 1):
+        status_icon = "✅" if run["status"] == "completed" else "⏸️"
+        logger.info(f"\n{i}. {status_icon} {run['run_id']}")
+        logger.info(f"   主题: {run['query']}")
+        logger.info(f"   标题: {run['title'][:40]}..." if len(run.get('title', '')) > 40 else f"   标题: {run.get('title', 'N/A')}")
+        logger.info(f"   进度: {run['completed_chapters']}/{run['total_chapters']} 章节")
+        logger.info(f"   创建时间: {run['created_at'][:19].replace('T', ' ')}")
+    
+    logger.info("\n" + "=" * 70)
+    logger.info("使用 --resume <run_id> 续生成未完成的报告")
+    logger.info("=" * 70)
+
+
+def resume_report_generation(run_id: str, skip_pdf: bool, markdown_enabled: bool):
+    """
+    从断点续生成报告。
+    
+    Args:
+        run_id: 报告运行ID
+        skip_pdf: 是否跳过PDF生成
+        markdown_enabled: 是否生成Markdown
+    """
+    from ReportEngine.core import ChapterStorage
+    from ReportEngine.agent import ReportAgent
+    from ReportEngine.renderers import HTMLRenderer
+    
+    logger.info("=" * 70)
+    logger.info(f"断点续生成: {run_id}")
+    logger.info("=" * 70)
+    
+    storage = ChapterStorage("final_reports/chapters")
+    
+    # 加载会话
+    manifest = storage.load_run_session(run_id)
+    if not manifest:
+        logger.error(f"❌ 找不到运行记录: {run_id}")
+        sys.exit(1)
+    
+    # 获取已完成和未完成的章节
+    completed = storage.get_completed_chapters(run_id)
+    incomplete = storage.get_incomplete_chapters(run_id)
+    
+    logger.info(f"✓ 已完成章节: {len(completed)} 个")
+    for ch in completed:
+        logger.info(f"  - {ch.get('title', 'N/A')}")
+    
+    if incomplete:
+        logger.info(f"⏸ 未完成章节: {len(incomplete)} 个")
+        for ch in incomplete:
+            logger.info(f"  - {ch.get('title', 'N/A')} (状态: {ch.get('status', 'N/A')})")
+    else:
+        logger.success("所有章节已完成！直接组装报告...")
+    
+    # 如果有未完成章节，重新生成
+    if incomplete:
+        logger.info("\n开始重新生成未完成章节...")
+        
+        # 加载三引擎报告
+        latest_files = get_latest_engine_reports()
+        reports = load_engine_reports(latest_files)
+        query = manifest.get("metadata", {}).get("query", "报告")
+        
+        # 初始化Agent
+        agent = ReportAgent()
+        run_dir = storage.get_run_dir(run_id)
+        
+        # 构建生成上下文
+        from ReportEngine.core import parse_template_sections
+        template_overview_path = run_dir / "template_overview.json"
+        word_plan_path = run_dir / "word_plan.json"
+        
+        if template_overview_path.exists():
+            template_overview = json.load(open(template_overview_path, 'r', encoding='utf-8'))
+        else:
+            logger.error("❌ 模板文件不存在")
+            sys.exit(1)
+        
+        if word_plan_path.exists():
+            word_plan = json.load(open(word_plan_path, 'r', encoding='utf-8'))
+        else:
+            word_plan = {}
+        
+        # 为每个未完成章节重新生成
+        # TODO: 这里需要更复杂的逻辑来匹配章节模板
+        # 当前简化处理：直接使用已保存的章节数据
+        logger.warning("⚠ 当前版本暂不支持重新生成单个章节，将使用现有数据组装报告")
+    
+    # 组装所有章节
+    all_chapters = storage.load_chapters(storage.get_run_dir(run_id))
+    
+    if not all_chapters:
+        logger.error("❌ 没有找到任何章节数据")
+        sys.exit(1)
+    
+    logger.info(f"\n共加载 {len(all_chapters)} 个章节，开始组装报告...")
+    
+    # 构建 Document IR
+    layout_path = storage.get_run_dir(run_id) / "document_layout.json"
+    if layout_path.exists():
+        layout = json.load(open(layout_path, 'r', encoding='utf-8'))
+    else:
+        layout = {"title": manifest.get("metadata", {}).get("title", "报告"), "toc": []}
+    
+    document_ir = {
+        "reportId": run_id,
+        "title": layout.get("title", "报告"),
+        "toc": layout.get("toc", []),
+        "chapters": all_chapters,
+        "meta": layout.get("meta", {}),
+    }
+    
+    # 保存IR
+    ir_path = Path("final_reports") / f"document_ir_{run_id}.json"
+    with open(ir_path, 'w', encoding='utf-8') as f:
+        json.dump(document_ir, f, ensure_ascii=False, indent=2)
+    logger.success(f"✓ Document IR 已保存: {ir_path}")
+    
+    # 渲染HTML
+    renderer = HTMLRenderer()
+    html_content = renderer.render(document_ir)
+    
+    html_path = Path("final_reports") / f"final_report_{run_id}.html"
+    with open(html_path, 'w', encoding='utf-8') as f:
+        f.write(html_content)
+    logger.success(f"✓ HTML 报告已保存: {html_path}")
+    
+    # 生成PDF和Markdown
+    query = manifest.get("metadata", {}).get("query", "report")
+    
+    if not skip_pdf:
+        pdf_path = save_pdf(str(ir_path), query)
+        if pdf_path:
+            logger.success(f"✓ PDF 已保存: {pdf_path}")
+    
+    if markdown_enabled:
+        md_path = save_markdown(str(ir_path), query)
+        if md_path:
+            logger.success(f"✓ Markdown 已保存: {md_path}")
+    
+    logger.info("\n" + "=" * 70)
+    logger.success("✓ 断点续生成完成！")
+    logger.info(f"HTML 文件: {html_path}")
+    logger.info("=" * 70)
+
+
 def parse_arguments():
     """解析命令行参数"""
     parser = argparse.ArgumentParser(
@@ -457,6 +617,20 @@ def parse_arguments():
         help='指定报告模板名称（如：窄门创业机会发现报告）'
     )
 
+    parser.add_argument(
+        '--resume',
+        type=str,
+        default='',
+        metavar='RUN_ID',
+        help='从断点续生成报告（指定run_id，如：report-26e44774）'
+    )
+
+    parser.add_argument(
+        '--list-runs',
+        action='store_true',
+        help='列出所有可续生成的报告运行记录'
+    )
+
     return parser.parse_args()
 
 
@@ -473,6 +647,16 @@ def main():
     logger.info("║" + " " * 20 + "Report Engine 命令行版本" + " " * 24 + "║")
     logger.info("╚" + "═" * 68 + "╝")
     logger.info("\n")
+
+    # 处理 --list-runs 选项
+    if args.list_runs:
+        list_available_runs()
+        return
+
+    # 处理 --resume 选项
+    if args.resume:
+        resume_report_generation(args.resume, args.skip_pdf, not args.skip_markdown)
+        return
 
     # 步骤 1: 检查依赖
     pdf_available, _ = check_dependencies()
