@@ -1,15 +1,17 @@
 <div align="center">
 
-# 🐟 SmartFish v1.0.1
+# 🐟 SmartFish v1.1.0
 
 **智能舆情分析系统 - 基于多智能体架构**
 
 [![License](https://img.shields.io/badge/license-GPL--2.0-blue.svg)](LICENSE)
 [![Python](https://img.shields.io/badge/python-3.9+-blue.svg)](https://www.python.org/)
 [![Flask](https://img.shields.io/badge/flask-2.0+-green.svg)](https://flask.palletsprojects.com/)
-[![Version](https://img.shields.io/badge/version-1.0.1-green.svg)](CHANGELOG.md)
-[![Tests](https://img.shields.io/badge/tests-28%20passed-brightgreen.svg)](tests/)
+[![Version](https://img.shields.io/badge/version-1.1.0-green.svg)](CHANGELOG.md)
+[![Tests](https://img.shields.io/badge/tests-63%20passed-brightgreen.svg)](tests/)
 [![Coverage](https://img.shields.io/badge/coverage-85%25-brightgreen.svg)](tests/)
+
+</div>
 
 </div>
 
