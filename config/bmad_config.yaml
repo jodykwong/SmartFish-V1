@@ -1,0 +1,220 @@
+# BMAD Phase 0 验证工具配置文件
+# 用于痛点发现和用户验证
+
+# 验证标准配置
+validation:
+  min_pain_points: 3              # 最少发现痛点数
+  min_user_confirmations: 3       # 每个痛点最少用户确认数
+  min_strong_confirmation: 5      # 至少1个痛点的强确认用户数
+  min_payment_willingness: 0.3    # 最低付费意愿比例 (30%)
+
+# 数据筛选条件
+data_filters:
+  time_range_days: 30             # 搜索过去30天的数据
+  sentiment_priority: "negative"  # 优先负面情绪
+  min_mentions: 10                # 最少提及次数
+
+# 目标领域配置
+domains:
+  ai_chat_tools:
+    name: "AI聊天工具"
+    keywords:
+      - "Claude"
+      - "ChatGPT"
+      - "AI助手"
+      - "聊天机器人"
+      - "大模型"
+      - "AI对话"
+    pain_keywords:
+      - "上下文丢失"
+      - "多平台切换"
+      - "记忆不连续"
+      - "对话中断"
+      - "响应慢"
+      - "理解错误"
+      - "不够智能"
+      - "使用限制"
+    platforms:
+      - "zhihu"
+      - "weibo"
+      - "twitter"
+      - "reddit"
+
+  developer_tools:
+    name: "开发者工具"
+    keywords:
+      - "IDE"
+      - "代码编辑器"
+      - "开发环境"
+      - "VSCode"
+      - "JetBrains"
+      - "Cursor"
+      - "编程工具"
+    pain_keywords:
+      - "配置复杂"
+      - "插件冲突"
+      - "性能慢"
+      - "同步问题"
+      - "卡顿"
+      - "启动慢"
+      - "内存占用"
+      - "调试困难"
+    platforms:
+      - "zhihu"
+      - "v2ex"
+      - "github"
+      - "stackoverflow"
+
+  knowledge_management:
+    name: "个人知识管理"
+    keywords:
+      - "笔记软件"
+      - "知识库"
+      - "文档管理"
+      - "Notion"
+      - "Obsidian"
+      - "思源笔记"
+      - "语雀"
+    pain_keywords:
+      - "信息孤岛"
+      - "搜索困难"
+      - "同步问题"
+      - "格式混乱"
+      - "导出困难"
+      - "学习曲线"
+      - "迁移成本"
+      - "数据丢失"
+    platforms:
+      - "zhihu"
+      - "weibo"
+      - "xiaohongshu"
+      - "bilibili"
+
+  sentiment_analysis:
+    name: "舆情分析"
+    keywords:
+      - "舆情监测"
+      - "舆情分析"
+      - "品牌监控"
+      - "社交媒体监测"
+      - "口碑分析"
+      - "用户反馈分析"
+      - "情感分析"
+      - "网络舆情"
+    pain_keywords:
+      - "数据不准"
+      - "价格贵"
+      - "分析太慢"
+      - "覆盖不全"
+      - "报告难懂"
+      - "操作复杂"
+      - "实时性差"
+      - "误报漏报"
+      - "数据源少"
+      - "AI分析不准"
+    platforms:
+      - "zhihu"
+      - "weibo"
+      - "v2ex"
+      - "36kr"
+
+# 数据源配置
+data_sources:
+  # 搜索策略优先级
+  priority_order:
+    - "free"      # 优先免费工具
+    - "mcp"       # 社交媒体MCP
+    - "paid"      # 付费API备选
+  
+  # 通用搜索 (免费)
+  duckduckgo:
+    enabled: true
+    priority: 1
+    max_results: 20
+    
+  # 付费备选
+  tavily:
+    enabled: false                  # 默认禁用，需配置API密钥
+    priority: 10
+    max_results: 20
+    search_depth: "advanced"
+    
+  # 社交媒体 MCP 配置
+  mcp:
+    enabled: true
+    priority_platforms:             # 平台搜索优先级
+      - "xiaohongshu"               # 1. 消费者吐槽最集中
+      - "weibo"                     # 2. 实时热点舆情
+      - "zhihu"                     # 3. 专业深度讨论
+      - "bilibili"                  # 4. 年轻用户视频反馈
+      - "douyin"                    # 5. 短视频流行趋势
+    
+    # 各平台配置
+    xiaohongshu:
+      enabled: true
+      mcp_command: "xiaohongshu-mcp"
+      max_results: 20
+      priority: 2                   # 高优先级
+      cookie_refresh_hours: 24
+      
+    weibo:
+      enabled: true
+      mcp_command: "mcp-server-weibo"
+      max_results: 20
+      priority: 2
+      
+    zhihu:
+      enabled: true
+      mcp_command: "zhihu-mcp-server"
+      max_results: 20
+      priority: 2
+      
+    bilibili:
+      enabled: true
+      mcp_command: "bilibili-mcp"
+      max_results: 20
+      priority: 3                   # 中等优先级
+      
+    douyin:
+      enabled: true
+      mcp_command: "douyin-mcp"
+      max_results: 20
+      priority: 3
+      
+    video_sum:
+      enabled: true
+      mcp_command: "video-sum-mcp"
+      priority: 2
+      timeout: 60                   # 视频处理需要更长超时
+      
+  # 备用爬虫 (需手动配置)
+  mindspider:
+    enabled: false
+    platforms:
+      - "dy"                        # 抖音
+      - "bili"                      # B站
+      - "wb"                        # 微博
+      - "zhihu"                     # 知乎
+
+# 输出配置
+output:
+  directory: "_bmad-output"
+  files:
+    validation_report: "phase0-validation-report.md"
+    raw_data: "pain-points-raw-data.json"
+    user_responses: "user-validation-responses.json"
+    opportunity_analysis: "commercial-opportunity-analysis.md"
+    phase1_assessment: "phase1-entry-assessment.md"
+
+# 聚类分析配置
+clustering:
+  algorithm: "similarity"           # 基于相似度的聚类
+  min_cluster_size: 3              # 最小聚类大小
+  similarity_threshold: 0.7        # 相似度阈值
+
+# MCP Cookie 管理
+mcp_cookies:
+  storage_path: "config/mcp_cookies"
+  auto_refresh: true
+  refresh_before_expiry_hours: 2
+
