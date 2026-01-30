@@ -4579,6 +4579,8 @@ function getConsoleContainer() {
         // 刷新Report Engine日志
         // 检查Report Engine锁定状态并自动生成报告
         let autoGenerateTriggered = false; // 防止重复触发
+        let lastReportGenerationTime = 0; // 记录上次报告生成时间，用于防止频繁重复生成
+        const AUTO_GENERATE_COOLDOWN_MS = 5 * 60 * 1000; // 自动生成冷却时间：5分钟
         
         function checkReportLockStatus() {
             fetch('/api/report/status')
@@ -4595,13 +4597,20 @@ function getConsoleContainer() {
                     const reportPreview = document.getElementById('reportPreview');
                     const hasReport = reportPreview && reportPreview.querySelector('iframe');
                     
-                    // 如果当前在report页面且还没有触发自动生成且没有正在进行的任务且没有已显示的报告，则自动生成报告
-                    if (currentApp === 'report' && !autoGenerateTriggered && !reportTaskId && !hasReport) {
+                    // 如果当前在report页面且还没有触发自动生成且没有正在进行的任务且没有已显示的报告
+                    // 【修复】添加冷却时间检查，防止报告完成后被重新触发
+                    const now = Date.now();
+                    const cooldownElapsed = (now - lastReportGenerationTime) > AUTO_GENERATE_COOLDOWN_MS;
+                    
+                    if (currentApp === 'report' && !autoGenerateTriggered && !reportTaskId && !hasReport && cooldownElapsed) {
                         autoGenerateTriggered = true;
-                        console.log('检测到锁消失且无现有报告，自动开始生成报告');
+                        lastReportGenerationTime = now; // 记录触发时间
+                        console.log('检测到锁消失且无现有报告，冷却时间已过，自动开始生成报告');
                         setTimeout(() => {
                             generateReport();
                         }, 1000); // 延迟1秒开始生成
+                    } else if (!cooldownElapsed && !hasReport) {
+                        console.log('检测到自动生成条件满足，但仍在冷却时间内，跳过自动生成');
                     }
                 } else {
                     // 文件未准备就绪，锁定按钮
@@ -5424,7 +5433,9 @@ function getConsoleContainer() {
                         viewReport(taskId);
                         reportAutoPreviewLoaded = true;
                         
-                        // 重置自动生成标志，允许下次有新内容时自动生成
+                        // 【修复】更新完成时间，启动冷却期防止重复触发
+                        lastReportGenerationTime = Date.now();
+                        // 重置自动生成标志，但由于冷却时间的保护，不会立即重新触发
                         autoGenerateTriggered = false;
                         reportTaskId = null;
                         setGenerateButtonState(false);

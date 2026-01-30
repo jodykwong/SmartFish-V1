@@ -8,7 +8,7 @@ Query Engine 配置管理模块
 
 from pathlib import Path
 from pydantic_settings import BaseSettings
-from pydantic import Field
+from pydantic import Field, model_validator
 from typing import Optional
 from loguru import logger
 
@@ -25,8 +25,12 @@ class Settings(BaseSettings):
     变量名与原 config.py 大写一致，便于平滑过渡。
     """
     
+    # ================== 统一 OpenRouter 配置 ==================
+    OPENROUTER_API_KEY: Optional[str] = Field(None, description="统一的 OpenRouter API Key")
+    OPENROUTER_BASE_URL: str = Field("https://openrouter.ai/api/v1", description="OpenRouter API Base URL")
+    
     # ======================= LLM 相关 =======================
-    QUERY_ENGINE_API_KEY: str = Field(..., description="Query Engine LLM API密钥，用于主LLM。您可以更改每个部分LLM使用的API，🚩只要兼容OpenAI请求格式都可以，定义好KEY、BASE_URL与MODEL_NAME即可正常使用。")
+    QUERY_ENGINE_API_KEY: Optional[str] = Field(None, description="Query Engine LLM API密钥，用于主LLM。您可以更改每个部分LLM使用的API，🚩只要兼容OpenAI请求格式都可以，定义好KEY、BASE_URL与MODEL_NAME即可正常使用。")
     QUERY_ENGINE_BASE_URL: Optional[str] = Field(None, description="Query Engine LLM接口BaseUrl，可自定义厂商API")
     QUERY_ENGINE_MODEL_NAME: str = Field(..., description="Query Engine LLM模型名称")
     QUERY_ENGINE_PROVIDER: Optional[str] = Field(None, description="Query Engine LLM提供商（兼容字段）")
@@ -44,6 +48,15 @@ class Settings(BaseSettings):
     # ================== 输出配置 ====================
     OUTPUT_DIR: str = Field("reports", description="输出目录")
     SAVE_INTERMEDIATE_STATES: bool = Field(True, description="是否保存中间状态")
+    
+    @model_validator(mode='after')
+    def apply_openrouter_fallback(self):
+        """如果设置了统一的 OPENROUTER_API_KEY，则未单独配置的引擎自动使用该 Key 和 Base URL。"""
+        if self.OPENROUTER_API_KEY:
+            if not self.QUERY_ENGINE_API_KEY:
+                object.__setattr__(self, 'QUERY_ENGINE_API_KEY', self.OPENROUTER_API_KEY)
+                object.__setattr__(self, 'QUERY_ENGINE_BASE_URL', self.OPENROUTER_BASE_URL)
+        return self
     
     class Config:
         env_file = ENV_FILE

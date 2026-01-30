@@ -4,13 +4,17 @@ Report Engine 配置模块，统一读取环境变量并提供类型安全的访
 
 import os
 from pydantic_settings import BaseSettings
-from pydantic import Field
+from pydantic import Field, model_validator
 from typing import Optional
 
 from loguru import logger
 
 class Settings(BaseSettings):
     """Report Engine 配置，环境变量与字段均为REPORT_ENGINE_前缀一致大写。"""
+    # ================== 统一 OpenRouter 配置 ==================
+    OPENROUTER_API_KEY: Optional[str] = Field(None, description="统一的 OpenRouter API Key")
+    OPENROUTER_BASE_URL: str = Field("https://openrouter.ai/api/v1", description="OpenRouter API Base URL")
+    
     REPORT_ENGINE_API_KEY: Optional[str] = Field(None, description="Report Engine LLM API密钥")
     REPORT_ENGINE_BASE_URL: Optional[str] = Field(None, description="Report Engine LLM基础URL")
     REPORT_ENGINE_MODEL_NAME: Optional[str] = Field(None, description="Report Engine LLM模型名称")
@@ -66,6 +70,31 @@ class Settings(BaseSettings):
     JSON_ERROR_LOG_DIR: str = Field(
         "logs/json_repair_failures", description="无法修复的JSON块落盘目录"
     )
+
+    @model_validator(mode='after')
+    def apply_openrouter_fallback(self):
+        """
+        如果设置了统一的 OPENROUTER_API_KEY，则未单独配置的引擎自动使用该 Key 和 Base URL。
+        """
+        if self.OPENROUTER_API_KEY:
+            # Report Engine 自动回退
+            if not self.REPORT_ENGINE_API_KEY:
+                object.__setattr__(self, 'REPORT_ENGINE_API_KEY', self.OPENROUTER_API_KEY)
+                object.__setattr__(self, 'REPORT_ENGINE_BASE_URL', self.OPENROUTER_BASE_URL)
+            
+            # 其他引擎自动回退（用于跨引擎修复）
+            engines = [
+                ('INSIGHT_ENGINE_API_KEY', 'INSIGHT_ENGINE_BASE_URL'),
+                ('MEDIA_ENGINE_API_KEY', 'MEDIA_ENGINE_BASE_URL'),
+                ('FORUM_HOST_API_KEY', 'FORUM_HOST_BASE_URL'),
+            ]
+            
+            for api_key_attr, base_url_attr in engines:
+                if not getattr(self, api_key_attr):
+                    object.__setattr__(self, api_key_attr, self.OPENROUTER_API_KEY)
+                    object.__setattr__(self, base_url_attr, self.OPENROUTER_BASE_URL)
+        
+        return self
 
     class Config:
         """Pydantic配置：允许从.env读取并兼容大小写"""

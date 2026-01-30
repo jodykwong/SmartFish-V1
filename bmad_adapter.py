@@ -155,7 +155,7 @@ class BMADPainPointDiscovery:
         """MCP数据源路由器 (延迟初始化)"""
         if self._mcp_router is None and self.use_mcp:
             try:
-                from mcp_clients import DataSourceRouter
+                from MediaEngine.tools.mcp import DataSourceRouter
                 self._mcp_router = DataSourceRouter()
                 self._init_mcp_clients()
                 logger.info("BMAD 已启用 MCP 社交媒体数据源")
@@ -171,12 +171,12 @@ class BMADPainPointDiscovery:
             
         try:
             # 按优先级注册MCP客户端
-            from mcp_clients.xiaohongshu import XiaohongshuMCPClient
-            from mcp_clients.weibo import WeiboMCPClient
-            from mcp_clients.zhihu import ZhihuMCPClient
-            from mcp_clients.bilibili import BilibiliMCPClient
-            from mcp_clients.douyin import DouyinMCPClient
-            from mcp_clients.video_sum import VideoSumMCPClient
+            from MediaEngine.tools.mcp.clients.xiaohongshu import XiaohongshuMCPClient
+            from MediaEngine.tools.mcp.clients.weibo import WeiboMCPClient
+            from MediaEngine.tools.mcp.clients.zhihu import ZhihuMCPClient
+            from MediaEngine.tools.mcp.clients.bilibili import BilibiliMCPClient
+            from MediaEngine.tools.mcp.clients.douyin import DouyinMCPClient
+            from MediaEngine.tools.mcp.clients.video_sum import VideoSumMCPClient
             
             clients = [
                 (XiaohongshuMCPClient, True),   # 小红书，设为默认

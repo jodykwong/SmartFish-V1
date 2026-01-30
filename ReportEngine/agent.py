@@ -404,7 +404,8 @@ class ReportAgent:
     
     def generate_report(self, query: str, reports: List[Any], forum_logs: str = "",
                         custom_template: str = "", save_report: bool = True,
-                        stream_handler: Optional[Callable[[str, Dict[str, Any]], None]] = None) -> str:
+                        stream_handler: Optional[Callable[[str, Dict[str, Any]], None]] = None,
+                        resume_report_id: Optional[str] = None) -> str:
         """
         生成综合报告（章节JSON → IR → HTML）。
 
@@ -422,6 +423,7 @@ class ReportAgent:
             custom_template: 用户指定的Markdown模板，如为空则交由模板节点自动挑选。
             save_report: 是否在生成后自动将HTML、IR与状态写入磁盘。
             stream_handler: 可选的流式事件回调，接收阶段标签与payload，用于UI实时展示。
+            resume_report_id: 可选的报告ID，用于断点续生成。提供此参数时将跳过已完成的章节。
 
         返回:
             dict: 包含 `html_content` 以及HTML/IR/状态文件路径的字典；若 `save_report=False` 则仅返回HTML字符串。
@@ -431,6 +433,25 @@ class ReportAgent:
         """
         start_time = datetime.now()
         report_id = f"report-{uuid4().hex[:8]}"
+        
+        # ====== 断点续生成支持 ======
+        resume_session = None
+        completed_chapter_payloads: Dict[str, Dict[str, Any]] = {}
+        if resume_report_id:
+            resume_session = self.chapter_storage.load_run_session(resume_report_id)
+            if resume_session:
+                report_id = resume_report_id
+                logger.info(f"断点续生成: 从报告 {report_id} 恢复会话")
+                # 加载已完成的章节
+                completed_chapters = self.chapter_storage.get_completed_chapters(resume_report_id)
+                for ch in completed_chapters:
+                    ch_id = ch.get("chapterId") or ch.get("chapter_id")
+                    if ch_id:
+                        completed_chapter_payloads[ch_id] = ch
+                logger.info(f"断点续生成: 已恢复 {len(completed_chapter_payloads)} 个已完成章节")
+            else:
+                logger.warning(f"断点续生成: 未找到报告 {resume_report_id}，将从头开始生成")
+        
         self.state.task_id = report_id
         self.state.query = query
         self.state.metadata.query = query
@@ -449,7 +470,7 @@ class ReportAgent:
 
         logger.info(f"开始生成报告 {report_id}: {query}")
         logger.info(f"输入数据 - 报告数量: {len(reports)}, 论坛日志长度: {len(str(forum_logs))}")
-        emit('stage', {'stage': 'agent_start', 'report_id': report_id, 'query': query})
+        emit('stage', {'stage': 'agent_start', 'report_id': report_id, 'query': query, 'is_resume': bool(resume_session)})
 
         try:
             template_result = self._select_template(query, reports, forum_logs, custom_template)
@@ -567,6 +588,23 @@ class ReportAgent:
             completed_chapters = 0  # 已完成章节数
 
             for section in sections:
+                # ====== 断点续生成: 跳过已完成章节 ======
+                if section.chapter_id in completed_chapter_payloads:
+                    logger.info(f"断点续生成: 跳过已完成章节 {section.title}")
+                    chapters.append(completed_chapter_payloads[section.chapter_id])
+                    completed_chapters += 1
+                    chapter_progress = 20 + round(80 * completed_chapters / total_chapters)
+                    emit('chapter_status', {
+                        'chapterId': section.chapter_id,
+                        'title': section.title,
+                        'status': 'skipped_resume'
+                    })
+                    emit('progress', {
+                        'progress': chapter_progress,
+                        'message': f'章节 {completed_chapters}/{total_chapters} (已恢复)'
+                    })
+                    continue
+                
                 logger.info(f"生成章节: {section.title}")
                 emit('chapter_status', {
                     'chapterId': section.chapter_id,

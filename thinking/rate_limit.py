@@ -10,7 +10,8 @@ def init_limiter(app):
     limiter = Limiter(
         app=app,
         key_func=get_remote_address,
-        default_limits=["200 per day", "50 per hour"],
+        # 放宽限制以支持前端正常轮询，同时防止滥用
+        default_limits=["1000 per minute", "10000 per hour"],
         storage_uri="memory://",
     )
     return limiter

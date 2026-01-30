@@ -46,9 +46,14 @@ class LLMClient:
         except ValueError:
             self.timeout = 1800.0
 
+        # 创建自定义 httpx 客户端,禁用 HTTP/2 以避免某些网络环境下的连接重置问题
+        import httpx
+        http_client = httpx.Client(http2=False, timeout=httpx.Timeout(self.timeout, connect=30.0))
+        
         client_kwargs: Dict[str, Any] = {
             "api_key": api_key,
             "max_retries": 0,
+            "http_client": http_client,
         }
         if base_url:
             client_kwargs["base_url"] = base_url

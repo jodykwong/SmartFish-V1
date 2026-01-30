@@ -433,7 +433,7 @@ def check_engines_ready() -> Dict[str, Any]:
     )
 
 
-def run_report_generation(task: ReportTask, query: str, custom_template: str = ""):
+def run_report_generation(task: ReportTask, query: str, custom_template: str = "", resume_report_id: str = ""):
     """
     在后台线程中运行报告生成。
 
@@ -444,6 +444,7 @@ def run_report_generation(task: ReportTask, query: str, custom_template: str = "
         task: 本次任务对象，内部持有事件队列。
         query: 报告主题。
         custom_template: 可选的自定义模板字符串。
+        resume_report_id: 可选的报告ID，用于断点续生成。
     """
     global current_task
 
@@ -489,7 +490,8 @@ def run_report_generation(task: ReportTask, query: str, custom_template: str = "
                     forum_logs=content['forum_logs'],
                     custom_template=custom_template,
                     save_report=True,
-                    stream_handler=stream_handler
+                    stream_handler=stream_handler,
+                    resume_report_id=resume_report_id or None
                 )
                 break
             except ChapterJsonParseError as err:
@@ -696,6 +698,157 @@ def generate_report():
 
     except Exception as e:
         logger.exception(f"开始生成报告失败: {str(e)}")
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
+
+@report_bp.route('/incomplete_runs', methods=['GET'])
+def get_incomplete_runs():
+    """
+    获取所有未完成的报告生成记录，用于断点续生成。
+
+    返回:
+        Response: JSON包含可续生成的报告列表。
+    """
+    try:
+        if not report_agent:
+            return jsonify({
+                'success': False,
+                'error': 'Report Engine未初始化'
+            }), 500
+        
+        # 获取所有运行记录
+        all_runs = report_agent.chapter_storage.list_runs()
+        
+        # 过滤出未完成的运行
+        incomplete_runs = [
+            run for run in all_runs 
+            if run.get('status') != 'completed'
+        ]
+        
+        return jsonify({
+            'success': True,
+            'incomplete_runs': incomplete_runs,
+            'total_count': len(incomplete_runs)
+        })
+    
+    except Exception as e:
+        logger.exception(f"获取未完成报告列表失败: {str(e)}")
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
+
+@report_bp.route('/resume', methods=['POST'])
+def resume_report():
+    """
+    续生成一个未完成的报告。
+
+    请求体:
+        run_id: 要续生成的报告ID（如 report-xxxxxxxx）
+
+    返回:
+        Response: JSON，包含 task_id 与 SSE stream URL。
+    """
+    global current_task
+
+    try:
+        # 检查是否有任务在运行
+        with task_lock:
+            if current_task and current_task.status == "running":
+                return jsonify({
+                    'success': False,
+                    'error': '已有报告生成任务在运行中',
+                    'current_task': current_task.to_dict()
+                }), 400
+
+            # 清理已完成的任务
+            if current_task and current_task.status in ["completed", "error"]:
+                current_task = None
+
+        # 获取请求参数
+        data = request.get_json() or {}
+        run_id = data.get('run_id', '')
+        
+        if not run_id:
+            return jsonify({
+                'success': False,
+                'error': '缺少 run_id 参数'
+            }), 400
+
+        # 检查Report Engine是否初始化
+        if not report_agent:
+            return jsonify({
+                'success': False,
+                'error': 'Report Engine未初始化'
+            }), 500
+
+        # 验证run_id是否存在
+        existing_session = report_agent.chapter_storage.load_run_session(run_id)
+        if not existing_session:
+            return jsonify({
+                'success': False,
+                'error': f'报告 {run_id} 不存在'
+            }), 404
+
+        # 从manifest恢复query
+        query = existing_session.get('metadata', {}).get('query', '智能舆情分析报告')
+
+        # 检查输入文件是否准备就绪
+        engines_status = check_engines_ready()
+        if not engines_status['ready']:
+            return jsonify({
+                'success': False,
+                'error': '输入文件未准备就绪',
+                'missing_files': engines_status.get('missing_files', [])
+            }), 400
+
+        # 清空日志文件
+        clear_report_log()
+
+        # 创建新任务（使用原有run_id作为任务ID）
+        task_id = f"resume_{run_id}_{int(time.time())}"
+        task = ReportTask(query, task_id)
+
+        with task_lock:
+            current_task = task
+            tasks_registry[task_id] = task
+            _prune_task_history_locked()
+
+        # 推送pending事件
+        task.publish_event(
+            'status',
+            {
+                'status': task.status,
+                'progress': task.progress,
+                'message': f'断点续生成任务已排队: {run_id}',
+                'resume_from': run_id,
+                'task': task.to_dict(),
+            }
+        )
+
+        # 在后台线程中运行报告生成
+        thread = threading.Thread(
+            target=run_report_generation,
+            args=(task, query, "", run_id),  # 传递 resume_report_id
+            daemon=True
+        )
+        thread.start()
+
+        return jsonify({
+            'success': True,
+            'task_id': task_id,
+            'resume_from': run_id,
+            'message': f'断点续生成已启动，从 {run_id} 恢复',
+            'task': task.to_dict(),
+            'stream_url': f"/api/report/stream/{task_id}"
+        })
+
+    except Exception as e:
+        logger.exception(f"断点续生成失败: {str(e)}")
         return jsonify({
             'success': False,
             'error': str(e)

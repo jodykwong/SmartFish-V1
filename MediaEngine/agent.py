@@ -445,8 +445,12 @@ class AnspireSearchAgent(DeepSearchAgent):
         # 初始化LLM客户端
         self.llm_client = self._initialize_llm()
         
-        # 初始化搜索工具集
-        self.search_agency = AnspireAISearch(api_key=self.config.ANSPIRE_API_KEY)
+        # 初始化搜索工具集 - 检查 API Key 是否存在
+        if not self.config.ANSPIRE_API_KEY:
+            logger.warning("ANSPIRE_API_KEY 未配置，回退到免费的 DuckDuckGo 搜索引擎")
+            self.search_agency = DuckDuckGoSearch()
+        else:
+            self.search_agency = AnspireAISearch(api_key=self.config.ANSPIRE_API_KEY)
 
         # 初始化节点
         self._initialize_nodes()

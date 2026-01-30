@@ -34,6 +34,18 @@ if utils_dir not in sys.path:
 
 from retry_helper import with_graceful_retry, SEARCH_API_RETRY_CONFIG
 from dataclasses import dataclass, field
+from loguru import logger
+
+# 安全打印函数，防止 BrokenPipeError
+def safe_print(msg: str):
+    """安全打印，捕获 BrokenPipeError 避免在子进程中崩溃"""
+    try:
+        print(msg)
+    except BrokenPipeError:
+        # 管道已关闭，使用 logger 代替
+        logger.info(msg)
+    except Exception:
+        pass  # 忽略其他打印错误
 
 # 运行前请确保已安装Tavily库: pip install tavily-python
 try:
@@ -119,7 +131,7 @@ class TavilyNewsAgency:
                 response_time=response_dict.get('response_time')
             )
         except Exception as e:
-            print(f"搜索时发生错误: {str(e)}")
+            safe_print(f"搜索时发生错误: {str(e)}")
             raise e  # 让重试机制捕获并处理
 
     # --- Agent 可用的工具方法 ---
@@ -130,7 +142,7 @@ class TavilyNewsAgency:
         这是最常用的通用搜索工具，适用于不确定需要何种特定搜索时。
         Agent可提供搜索查询(query)和可选的最大结果数(max_results)。
         """
-        print(f"--- TOOL: 基础新闻搜索 (query: {query}) ---")
+        safe_print(f"--- TOOL: 基础新闻搜索 (query: {query}) ---")
         return self._search_internal(
             query=query,
             max_results=max_results,
@@ -144,7 +156,7 @@ class TavilyNewsAgency:
         返回AI生成的“高级”详细摘要答案和最多20条最相关的新闻结果。适用于需要全面了解某个事件背景的场景。
         Agent只需提供搜索查询(query)。
         """
-        print(f"--- TOOL: 深度新闻分析 (query: {query}) ---")
+        safe_print(f"--- TOOL: 深度新闻分析 (query: {query}) ---")
         return self._search_internal(
             query=query, search_depth="advanced", max_results=20, include_answer="advanced"
         )
@@ -155,7 +167,7 @@ class TavilyNewsAgency:
         此工具专门查找过去24小时内发布的新闻。适用于追踪突发事件或最新进展。
         Agent只需提供搜索查询(query)。
         """
-        print(f"--- TOOL: 搜索24小时内新闻 (query: {query}) ---")
+        safe_print(f"--- TOOL: 搜索24小时内新闻 (query: {query}) ---")
         return self._search_internal(query=query, time_range='d', max_results=10)
 
     def search_news_last_week(self, query: str) -> TavilyResponse:
@@ -164,7 +176,7 @@ class TavilyNewsAgency:
         适用于进行周度舆情总结或回顾。
         Agent只需提供搜索查询(query)。
         """
-        print(f"--- TOOL: 搜索本周新闻 (query: {query}) ---")
+        safe_print(f"--- TOOL: 搜索本周新闻 (query: {query}) ---")
         return self._search_internal(query=query, time_range='w', max_results=10)
 
     def search_images_for_news(self, query: str) -> TavilyResponse:
@@ -173,7 +185,7 @@ class TavilyNewsAgency:
         此工具会返回图片链接及描述，适用于需要为报告或文章配图的场景。
         Agent只需提供搜索查询(query)。
         """
-        print(f"--- TOOL: 查找新闻图片 (query: {query}) ---")
+        safe_print(f"--- TOOL: 查找新闻图片 (query: {query}) ---")
         return self._search_internal(
             query=query, include_images=True, include_image_descriptions=True, max_results=5
         )
@@ -184,7 +196,7 @@ class TavilyNewsAgency:
         这是唯一需要Agent提供详细时间参数的工具。适用于需要对特定历史事件进行分析的场景。
         Agent需要提供查询(query)、开始日期(start_date)和结束日期(end_date)，格式均为 'YYYY-MM-DD'。
         """
-        print(f"--- TOOL: 按指定日期范围搜索新闻 (query: {query}, from: {start_date}, to: {end_date}) ---")
+        safe_print(f"--- TOOL: 按指定日期范围搜索新闻 (query: {query}, from: {start_date}, to: {end_date}) ---")
         return self._search_internal(
             query=query, start_date=start_date, end_date=end_date, max_results=15
         )

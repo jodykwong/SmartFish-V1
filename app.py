@@ -41,6 +41,22 @@ except ImportError as e:
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'Dedicated-to-creating-a-concise-and-versatile-public-opinion-analysis-platform'
+
+# 配置数据库连接URI（用于Thinking模块）
+try:
+    from config import settings
+    # 构建数据库连接URI
+    if settings.DB_DIALECT == 'postgresql':
+        db_uri = f"postgresql://{settings.DB_USER}:{settings.DB_PASSWORD}@{settings.DB_HOST}:{settings.DB_PORT}/{settings.DB_NAME}"
+    else:  # mysql
+        db_uri = f"mysql+pymysql://{settings.DB_USER}:{settings.DB_PASSWORD}@{settings.DB_HOST}:{settings.DB_PORT}/{settings.DB_NAME}?charset={settings.DB_CHARSET}"
+    
+    app.config['SQLALCHEMY_DATABASE_URI'] = db_uri
+    app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+    logger.info(f"数据库URI已配置: {settings.DB_DIALECT}://{settings.DB_USER}@{settings.DB_HOST}:{settings.DB_PORT}/{settings.DB_NAME}")
+except Exception as e:
+    logger.warning(f"数据库URI配置失败: {e}")
+
 # 启用 Gzip 压缩
 Compress(app)
 socketio = SocketIO(app, cors_allowed_origins="*", async_mode='threading')
@@ -760,6 +776,10 @@ def _build_healthcheck_url(port):
 def check_app_status():
     """检查应用状态"""
     for app_name, info in processes.items():
+        # 跳过没有端口的应用（如 forum）
+        if info['port'] is None:
+            continue
+            
         if info['process'] is not None:
             if info['process'].poll() is None:
                 # 进程仍在运行，检查端口是否可访问
@@ -779,6 +799,23 @@ def check_app_status():
             else:
                 # 进程已结束
                 info['process'] = None
+                info['status'] = 'stopped'
+        else:
+            # 没有进程句柄，但可能引擎已经在运行（例如之前启动的）
+            # 尝试通过健康检查来判断
+            try:
+                response = requests.get(
+                    _build_healthcheck_url(info['port']),
+                    timeout=2,
+                    proxies=HEALTHCHECK_PROXIES
+                )
+                if response.status_code == 200:
+                    info['status'] = 'running'
+                    logger.info(f"{app_name} 检测到已运行的实例（端口 {info['port']}）")
+                else:
+                    info['status'] = 'stopped'
+            except Exception:
+                # 健康检查失败，确认为停止状态
                 info['status'] = 'stopped'
 
 def wait_for_app_startup(app_name, max_wait_time=90):
@@ -1408,6 +1445,236 @@ def handle_status_request():
         }
         for app_name, info in processes.items()
     })
+
+
+# ============================================================================
+# BMAD Phase 0 验证工具 API
+# ============================================================================
+
+@app.route('/api/bmad/discover', methods=['POST'])
+def bmad_discover_pain_points():
+    """
+    发现痛点API
+    
+    请求体:
+    {
+        "domain": "ai_chat_tools",  // 可选，默认发现所有领域
+        "max_results": 50           // 可选
+    }
+    """
+    try:
+        from pain_point_engine import PainPointDiscoveryEngine
+        
+        data = request.get_json() or {}
+        domain = data.get('domain')
+        
+        engine = PainPointDiscoveryEngine()
+        
+        if domain:
+            result = engine.run_discovery([domain])
+        else:
+            result = engine.run_discovery()
+            
+        # 保存结果
+        engine.save_results()
+        
+        return jsonify({
+            'success': True,
+            'data': result
+        })
+        
+    except Exception as e:
+        logger.exception(f"BMAD痛点发现失败: {e}")
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
+
+@app.route('/api/bmad/validate', methods=['POST'])
+def bmad_validate_pain_point():
+    """
+    验证痛点API
+    
+    请求体:
+    {
+        "pain_point_id": "pp_xxx",
+        "simulate": true,           // 是否模拟响应（测试用）
+        "response_count": 15        // 模拟响应数量
+    }
+    """
+    try:
+        from user_validator import UserValidator
+        from bmad_adapter import PainPoint
+        
+        data = request.get_json() or {}
+        pain_point_id = data.get('pain_point_id')
+        simulate = data.get('simulate', True)
+        response_count = data.get('response_count', 15)
+        
+        if not pain_point_id:
+            return jsonify({
+                'success': False,
+                'error': '缺少pain_point_id参数'
+            }), 400
+            
+        validator = UserValidator()
+        
+        # 创建临时痛点对象（实际应从数据库获取）
+        temp_pp = PainPoint(
+            id=pain_point_id,
+            title=f"痛点 {pain_point_id}",
+            description="待验证痛点",
+            domain="unknown",
+            keywords=[]
+        )
+        
+        if simulate:
+            validator.simulate_responses(temp_pp, count=response_count)
+            
+        summary = validator.validate_pain_point(pain_point_id)
+        validator.save_results()
+        
+        return jsonify({
+            'success': True,
+            'data': summary.to_dict()
+        })
+        
+    except Exception as e:
+        logger.exception(f"BMAD痛点验证失败: {e}")
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
+
+@app.route('/api/bmad/report', methods=['GET'])
+def bmad_get_report():
+    """
+    获取BMAD验证报告
+    
+    查询参数:
+    - type: validation | opportunity | phase1 (默认validation)
+    """
+    try:
+        import os
+        
+        report_type = request.args.get('type', 'validation')
+        output_dir = '_bmad-output'
+        
+        file_map = {
+            'validation': 'phase0-validation-report.md',
+            'opportunity': 'commercial-opportunity-analysis.md',
+            'phase1': 'phase1-entry-assessment.md'
+        }
+        
+        filename = file_map.get(report_type)
+        if not filename:
+            return jsonify({
+                'success': False,
+                'error': f'未知的报告类型: {report_type}'
+            }), 400
+            
+        filepath = os.path.join(output_dir, filename)
+        
+        if not os.path.exists(filepath):
+            return jsonify({
+                'success': False,
+                'error': f'报告文件不存在: {filename}'
+            }), 404
+            
+        with open(filepath, 'r', encoding='utf-8') as f:
+            content = f.read()
+            
+        return jsonify({
+            'success': True,
+            'data': {
+                'type': report_type,
+                'filename': filename,
+                'content': content
+            }
+        })
+        
+    except Exception as e:
+        logger.exception(f"获取BMAD报告失败: {e}")
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
+
+@app.route('/api/bmad/generate-report', methods=['POST'])
+def bmad_generate_report():
+    """
+    生成BMAD验证报告
+    
+    需要先执行discover和validate
+    """
+    try:
+        from pain_point_engine import PainPointDiscoveryEngine
+        from user_validator import UserValidator
+        from bmad_report_generator import BMADReportGenerator
+        
+        # 运行完整流程
+        engine = PainPointDiscoveryEngine()
+        result = engine.run_discovery()
+        
+        # 模拟验证
+        validator = UserValidator()
+        validations = {}
+        
+        for pp in engine.all_pain_points[:5]:  # 只验证前5个
+            validator.simulate_responses(pp, count=10)
+            summary = validator.validate_pain_point(pp.id)
+            validations[pp.id] = summary
+            
+        # 生成报告
+        generator = BMADReportGenerator()
+        paths = generator.generate_all_reports(
+            pain_points=engine.all_pain_points,
+            clusters=engine.clusters,
+            validations=validations
+        )
+        
+        return jsonify({
+            'success': True,
+            'data': {
+                'discovery_result': result,
+                'report_paths': paths
+            }
+        })
+        
+    except Exception as e:
+        logger.exception(f"生成BMAD报告失败: {e}")
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
+
+@app.route('/api/bmad/config', methods=['GET'])
+def bmad_get_config():
+    """获取BMAD配置"""
+    try:
+        from bmad_adapter import DomainConfig
+        
+        config = DomainConfig()
+        
+        return jsonify({
+            'success': True,
+            'data': {
+                'domains': config.get_all_domains(),
+                'validation_standards': config.get_validation_standards()
+            }
+        })
+        
+    except Exception as e:
+        logger.exception(f"获取BMAD配置失败: {e}")
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
 
 if __name__ == '__main__':
     # 直接导入根目录的config.py模块，避免与config目录冲突

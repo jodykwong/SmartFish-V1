@@ -1,0 +1,60 @@
+{
+  "mcpServers": {
+    "xiaohongshu": {
+      "command": "npx",
+      "args": [
+        "xiaohongshu-mcp@latest"
+      ],
+      "description": "小红书 MCP 客户端 - 需要首次使用时扫码登录"
+    },
+    "weibo": {
+      "command": "npx",
+      "args": [
+        "mcp-server-weibo"
+      ],
+      "description": "微博 MCP 客户端"
+    },
+    "zhihu": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "zhihu-mcp-server"
+      ],
+      "description": "知乎 MCP 客户端"
+    },
+    "bilibili": {
+      "command": "npx",
+      "args": [
+        "bilibili-video-info-mcp"
+      ],
+      "description": "B站 MCP 客户端"
+    },
+    "douyin": {
+      "command": "npx",
+      "args": [
+        "douyin-mcp-server"
+      ],
+      "description": "抖音 MCP 客户端"
+    },
+    "video_sum": {
+      "command": "npx",
+      "args": [
+        "video-sum-mcp"
+      ],
+      "description": "多平台视频总结 MCP 客户端"
+    },
+    "hotnews": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@wopal/mcp-server-hotnews"
+      ],
+      "description": "多平台热榜 MCP (知乎/微博/B站等9平台)"
+    }
+  },
+  "settings": {
+    "cookieStoragePath": "~/.smartfish/mcp/cookies",
+    "defaultTimeout": 30,
+    "maxRetries": 3
+  }
+}

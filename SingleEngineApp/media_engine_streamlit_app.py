@@ -105,7 +105,11 @@ def main():
         # 自动使用配置文件中的API密钥
         engine_key = settings.MEDIA_ENGINE_API_KEY
         bocha_key = settings.BOCHA_WEB_SEARCH_API_KEY
-        ansire_key = settings.ANSPIRE_API_KEY
+        anspire_key = settings.ANSPIRE_API_KEY
+        
+        # 调试日志
+        logger.info(f"[DEBUG] SEARCH_TOOL_TYPE: {settings.SEARCH_TOOL_TYPE}")
+        logger.info(f"[DEBUG] ANSPIRE_API_KEY loaded: {bool(anspire_key)} (first 10 chars: {anspire_key[:10] if anspire_key else 'None'})")
 
         # 构建 Settings（pydantic_settings风格，优先大写环境变量）
         if settings.SEARCH_TOOL_TYPE == "BochaAPI":
@@ -125,7 +129,7 @@ def main():
                 OUTPUT_DIR="media_engine_streamlit_reports",
             )
         elif settings.SEARCH_TOOL_TYPE == "AnspireAPI":
-            if not ansire_key:
+            if not anspire_key:
                 st.error("请在您的环境变量中设置ANSPIRE_API_KEY")
                 logger.error("请在您的环境变量中设置ANSPIRE_API_KEY")
                 return
@@ -135,7 +139,7 @@ def main():
                 MEDIA_ENGINE_BASE_URL=settings.MEDIA_ENGINE_BASE_URL,
                 MEDIA_ENGINE_MODEL_NAME=model_name,
                 SEARCH_TOOL_TYPE="AnspireAPI",
-                ANSPIRE_API_KEY=ansire_key,
+                ANSPIRE_API_KEY=anspire_key,
                 MAX_REFLECTIONS=max_reflections,
                 SEARCH_CONTENT_MAX_LENGTH=max_content_length,
                 OUTPUT_DIR="media_engine_streamlit_reports",

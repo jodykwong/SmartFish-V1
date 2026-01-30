@@ -1,61 +1,56 @@
 """
-MCP客户端包
+MCP客户端包 (已迁移)
 
-提供中国主流社交媒体平台的MCP客户端集成：
-- 小红书 (xiaohongshu)
-- 微博 (weibo)
-- 知乎 (zhihu)
-- B站 (bilibili)
-- 抖音 (douyin)
-- 多平台综合 (video_sum)
+⚠️ 已弃用警告: 此模块已迁移至 MediaEngine.tools.mcp
+请更新您的导入语句:
+
+    # 旧 (已弃用)
+    from mcp_clients import DataSourceRouter
+    from mcp_clients.xiaohongshu import XiaohongshuMCPClient
+    
+    # 新
+    from MediaEngine.tools.mcp import DataSourceRouter
+    from MediaEngine.tools.mcp.clients.xiaohongshu import XiaohongshuMCPClient
+
+此兼容性转发将在未来版本中移除。
 """
 
-from .base import (
+import warnings
+
+warnings.warn(
+    "mcp_clients 模块已迁移至 MediaEngine.tools.mcp，"
+    "请更新您的导入路径。此兼容性转发将在未来版本中移除。",
+    DeprecationWarning,
+    stacklevel=2
+)
+
+# 兼容性转发：从新位置导入所有内容
+from MediaEngine.tools.mcp import (
     BaseMCPClient,
     MCPSearchResult,
     MCPResponse,
     DataSourceRouter,
     get_router,
-    init_router
+    init_router,
+    get_xiaohongshu_client,
+    get_weibo_client,
+    get_zhihu_client,
+    get_bilibili_client,
+    get_douyin_client,
+    get_video_sum_client,
 )
 
 __all__ = [
-    # 基类
     "BaseMCPClient",
-    "MCPSearchResult", 
+    "MCPSearchResult",
     "MCPResponse",
     "DataSourceRouter",
     "get_router",
     "init_router",
+    "get_xiaohongshu_client",
+    "get_weibo_client",
+    "get_zhihu_client",
+    "get_bilibili_client",
+    "get_douyin_client",
+    "get_video_sum_client",
 ]
-
-# 延迟导入平台客户端（避免循环依赖）
-def get_xiaohongshu_client():
-    """获取小红书客户端"""
-    from .xiaohongshu import XiaohongshuMCPClient
-    return XiaohongshuMCPClient
-
-def get_weibo_client():
-    """获取微博客户端"""
-    from .weibo import WeiboMCPClient
-    return WeiboMCPClient
-
-def get_zhihu_client():
-    """获取知乎客户端"""
-    from .zhihu import ZhihuMCPClient
-    return ZhihuMCPClient
-
-def get_bilibili_client():
-    """获取B站客户端"""
-    from .bilibili import BilibiliMCPClient
-    return BilibiliMCPClient
-
-def get_douyin_client():
-    """获取抖音客户端"""
-    from .douyin import DouyinMCPClient
-    return DouyinMCPClient
-
-def get_video_sum_client():
-    """获取多平台综合客户端"""
-    from .video_sum import VideoSumMCPClient
-    return VideoSumMCPClient
