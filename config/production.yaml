@@ -1,0 +1,48 @@
+"""生产环境配置"""
+
+# 三层架构配置
+tri_layer:
+  # MCP 配置 (Tier 1)
+  mcp:
+    weibo:
+      enabled: true
+      timeout: 30
+      retry: 3
+    douyin:
+      enabled: true
+      timeout: 30
+      retry: 3
+  
+  # MediaCrawler 配置 (Tier 2)
+  mediacrawler:
+    enabled: true
+    path: /app/MediaCrawler
+    timeout: 60
+    retry: 2
+  
+  # FireCrawl 配置 (Tier 3)
+  firecrawl:
+    enabled: true
+    api_key: ${FIRECRAWL_API_KEY}
+    base_url: https://api.firecrawl.dev/v1
+    timeout: 30
+    retry: 2
+
+# 路由配置
+router:
+  default_limit: 20
+  max_limit: 100
+  cache_ttl: 300
+
+# 监控配置
+monitoring:
+  enabled: true
+  prometheus_port: 9090
+  log_level: INFO
+
+# 服务配置
+service:
+  host: 0.0.0.0
+  port: 8080
+  workers: 4
+  timeout: 60

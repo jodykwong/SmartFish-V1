@@ -21,6 +21,11 @@ from .base import (
     init_router
 )
 
+# 三层架构简化客户端
+from .mcp_client import MCPClient
+from .weibo_mcp import WeiboMCP
+from .douyin_mcp import DouyinMCP
+
 __all__ = [
     # 基类
     "BaseMCPClient",
@@ -29,6 +34,10 @@ __all__ = [
     "DataSourceRouter",
     "get_router",
     "init_router",
+    # 简化客户端
+    "MCPClient",
+    "WeiboMCP",
+    "DouyinMCP",
 ]
 
 # 延迟导入平台客户端（避免循环依赖）

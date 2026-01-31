@@ -15,6 +15,7 @@ from .search import (
     print_response_summary,
     load_agent_from_config
 )
+from .router import DataSourceRouter
 
 __all__ = [
     "BochaMultimodalSearch",
@@ -26,5 +27,6 @@ __all__ = [
     "BochaResponse",
     "AnspireResponse",
     "print_response_summary",
-    "load_agent_from_config"
+    "load_agent_from_config",
+    "DataSourceRouter"
 ]

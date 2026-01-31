@@ -1,0 +1,61 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: smartfish
+  labels:
+    app: smartfish
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: smartfish
+  template:
+    metadata:
+      labels:
+        app: smartfish
+    spec:
+      containers:
+      - name: smartfish
+        image: smartfish:latest
+        ports:
+        - containerPort: 8080
+        env:
+        - name: ENV
+          value: "production"
+        - name: FIRECRAWL_API_KEY
+          valueFrom:
+            secretKeyRef:
+              name: smartfish-secrets
+              key: firecrawl-api-key
+        livenessProbe:
+          httpGet:
+            path: /health/live
+            port: 8080
+          initialDelaySeconds: 30
+          periodSeconds: 10
+        readinessProbe:
+          httpGet:
+            path: /health/ready
+            port: 8080
+          initialDelaySeconds: 10
+          periodSeconds: 5
+        resources:
+          requests:
+            memory: "512Mi"
+            cpu: "500m"
+          limits:
+            memory: "1Gi"
+            cpu: "1000m"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: smartfish-service
+spec:
+  selector:
+    app: smartfish
+  ports:
+  - protocol: TCP
+    port: 80
+    targetPort: 8080
+  type: LoadBalancer

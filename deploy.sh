@@ -13,9 +13,9 @@ if [ ! -f .env.prod ]; then
     exit 1
 fi
 
-# 拉取最新代码
-echo "📥 拉取最新代码..."
-git pull
+# 拉取最新代码（跳过，使用本地代码）
+echo "📦 使用本地代码..."
+# git pull
 
 # 构建镜像
 echo "🔨 构建 Docker 镜像..."

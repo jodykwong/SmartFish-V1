@@ -1,0 +1,41 @@
+"""开发环境配置"""
+
+# 三层架构配置
+tri_layer:
+  mcp:
+    weibo:
+      enabled: true
+      timeout: 10
+      retry: 1
+    douyin:
+      enabled: true
+      timeout: 10
+      retry: 1
+  
+  mediacrawler:
+    enabled: false  # 开发环境禁用
+    path: /home/sunrise/SmartFish/MindSpider/DeepSentimentCrawling/MediaCrawler
+    timeout: 30
+    retry: 1
+  
+  firecrawl:
+    enabled: false  # 开发环境使用 mock
+    api_key: fc-dev-key
+    base_url: http://localhost:3000
+    timeout: 10
+    retry: 1
+
+router:
+  default_limit: 5
+  max_limit: 20
+  cache_ttl: 60
+
+monitoring:
+  enabled: false
+  log_level: DEBUG
+
+service:
+  host: 127.0.0.1
+  port: 5000
+  workers: 1
+  timeout: 30
