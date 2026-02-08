@@ -3,34 +3,13 @@ Deep Search Agent主类
 整合所有模块，实现完整的深度搜索流程
 """
 
-import json
-import os
-import re
-from datetime import datetime
-from typing import Any, Dict, List, Optional, Union
-
-import numpy as np
+from typing import Optional
 from loguru import logger
 from sentence_transformers import SentenceTransformer
-from sklearn.cluster import KMeans
 
+from common.base_agent import BaseDeepSearchAgent
 from .llms import LLMClient
-from .nodes import (
-    FirstSearchNode,
-    FirstSummaryNode,
-    ReflectionNode,
-    ReflectionSummaryNode,
-    ReportFormattingNode,
-    ReportStructureNode,
-)
-from .state import State
-from .tools import (
-    DBResponse,
-    MediaCrawlerDB,
-    keyword_optimizer,
-    multilingual_sentiment_analyzer,
-)
-from .utils import format_search_results_for_prompt
+from .tools import MediaCrawlerDB, keyword_optimizer, multilingual_sentiment_analyzer
 from .utils.config import Settings, settings
 
 ENABLE_CLUSTERING: bool = True  # 是否启用聚类采样
@@ -38,44 +17,26 @@ MAX_CLUSTERED_RESULTS: int = 50  # 聚类后最大返回结果数
 RESULTS_PER_CLUSTER: int = 5  # 每个聚类返回的结果数
 
 
-class DeepSearchAgent:
-    """Deep Search Agent主类"""
+class DeepSearchAgent(BaseDeepSearchAgent):
+    """Insight Engine Deep Search Agent"""
 
     def __init__(self, config: Optional[Settings] = None):
-        """
-        初始化Deep Search Agent
-
-        Args:
-            config: 可选配置对象（不填则用全局settings）
-        """
-        self.config = config or settings
-
-        # 初始化LLM客户端
-        self.llm_client = self._initialize_llm()
-
-        # 初始化搜索工具集
-        self.search_agency = MediaCrawlerDB()
-
+        """初始化 Insight Agent"""
         # 初始化聚类小模型（懒加载）
         self._clustering_model = None
-
         # 初始化情感分析器
         self.sentiment_analyzer = multilingual_sentiment_analyzer
-
-        # 初始化节点
-        self._initialize_nodes()
-
-        # 状态
-        self.state = State()
-
-        # 确保输出目录存在
-        os.makedirs(self.config.OUTPUT_DIR, exist_ok=True)
-
-        logger.info(f"Insight Agent已初始化")
-        logger.info(f"使用LLM: {self.llm_client.get_model_info()}")
-        logger.info(f"搜索工具集: MediaCrawlerDB (支持5种本地数据库查询工具)")
+        
+        super().__init__(config or settings)
+        
         logger.info(f"情感分析: WeiboMultilingualSentiment (支持22种语言的情感分析)")
 
+    def get_agent_name(self) -> str:
+        return "Insight Agent"
+    
+    def get_search_agency_info(self) -> str:
+        return "MediaCrawlerDB (支持5种本地数据库查询工具)"
+    
     def _initialize_llm(self) -> LLMClient:
         """初始化LLM客户端"""
         return LLMClient(
@@ -83,14 +44,10 @@ class DeepSearchAgent:
             model_name=self.config.INSIGHT_ENGINE_MODEL_NAME,
             base_url=self.config.INSIGHT_ENGINE_BASE_URL,
         )
-
-    def _initialize_nodes(self):
-        """初始化处理节点"""
-        self.first_search_node = FirstSearchNode(self.llm_client)
-        self.reflection_node = ReflectionNode(self.llm_client)
-        self.first_summary_node = FirstSummaryNode(self.llm_client)
-        self.reflection_summary_node = ReflectionSummaryNode(self.llm_client)
-        self.report_formatting_node = ReportFormattingNode(self.llm_client)
+    
+    def _initialize_search_agency(self):
+        """初始化搜索工具集"""
+        return MediaCrawlerDB()
 
     def _get_clustering_model(self):
         """懒加载聚类模型"""
@@ -100,24 +57,6 @@ class DeepSearchAgent:
                 "paraphrase-multilingual-MiniLM-L12-v2"
             )
         return self._clustering_model
-
-    def _validate_date_format(self, date_str: str) -> bool:
-        """
-        验证日期格式是否为YYYY-MM-DD
-
-        Args:
-            date_str: 日期字符串
-
-        Returns:
-            是否为有效格式
-        """
-        if not date_str:
-            return False
-
-        # 检查格式
-        pattern = r"^\d{4}-\d{2}-\d{2}$"
-        if not re.match(pattern, date_str):
-            return False
 
         # 检查日期是否有效
         try:

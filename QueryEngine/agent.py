@@ -3,58 +3,28 @@ Deep Search Agent主类
 整合所有模块，实现完整的深度搜索流程
 """
 
-import json
-import os
-import re
-from datetime import datetime
-from typing import Optional, Dict, Any, List
-
-from .llms import LLMClient
-from .nodes import (
-    ReportStructureNode,
-    FirstSearchNode, 
-    ReflectionNode,
-    FirstSummaryNode,
-    ReflectionSummaryNode,
-    ReportFormattingNode
-)
-from .state import State
-from .tools import TavilyNewsAgency, TavilyResponse
-from .utils import Settings, format_search_results_for_prompt
+from typing import Optional, Dict, Any
 from loguru import logger
 
-class DeepSearchAgent:
-    """Deep Search Agent主类"""
+from common.base_agent import BaseDeepSearchAgent
+from .llms import LLMClient
+from .tools import TavilyNewsAgency
+from .utils import Settings
+from .utils.config import settings
+
+
+class DeepSearchAgent(BaseDeepSearchAgent):
+    """Query Engine Deep Search Agent"""
     
     def __init__(self, config: Optional[Settings] = None):
-        """
-        初始化Deep Search Agent
-        
-        Args:
-            config: 配置对象，如果不提供则自动加载
-        """
-        # 加载配置
-        from .utils.config import settings
-        self.config = config or settings
-        
-        # 初始化LLM客户端
-        self.llm_client = self._initialize_llm()
-        
-        # 初始化搜索工具集
-        self.search_agency = TavilyNewsAgency(api_key=self.config.TAVILY_API_KEY)
-        
-        # 初始化节点
-        self._initialize_nodes()
-        
-        # 状态
-        self.state = State()
-        
-        # 确保输出目录存在
-        os.makedirs(self.config.OUTPUT_DIR, exist_ok=True)
-        
-        logger.info(f"Query Agent已初始化")
-        logger.info(f"使用LLM: {self.llm_client.get_model_info()}")
-        logger.info(f"搜索工具集: TavilyNewsAgency (支持6种搜索工具)")
+        """初始化 Query Agent"""
+        super().__init__(config or settings)
+    
+    def get_agent_name(self) -> str:
+        return "Query Agent"
+    
+    def get_search_agency_info(self) -> str:
+        return "TavilyNewsAgency (支持6种搜索工具)"
     
     def _initialize_llm(self) -> LLMClient:
         """初始化LLM客户端"""
@@ -64,40 +34,9 @@ class DeepSearchAgent:
             base_url=self.config.QUERY_ENGINE_BASE_URL,
         )
     
-    def _initialize_nodes(self):
-        """初始化处理节点"""
-        self.first_search_node = FirstSearchNode(self.llm_client)
-        self.reflection_node = ReflectionNode(self.llm_client)
-        self.first_summary_node = FirstSummaryNode(self.llm_client)
-        self.reflection_summary_node = ReflectionSummaryNode(self.llm_client)
-        self.report_formatting_node = ReportFormattingNode(self.llm_client)
-    
-    def _validate_date_format(self, date_str: str) -> bool:
-        """
-        验证日期格式是否为YYYY-MM-DD
-        
-        Args:
-            date_str: 日期字符串
-            
-        Returns:
-            是否为有效格式
-        """
-        if not date_str:
-            return False
-        
-        # 检查格式
-        pattern = r'^\d{4}-\d{2}-\d{2}$'
-        if not re.match(pattern, date_str):
-            return False
-        
-        # 检查日期是否有效
-        try:
-            datetime.strptime(date_str, '%Y-%m-%d')
-            return True
-        except ValueError:
-            return False
-    
-    def execute_search_tool(self, tool_name: str, query: str, **kwargs) -> TavilyResponse:
+    def _initialize_search_agency(self):
+        """初始化搜索工具集"""
+        return TavilyNewsAgency(api_key=self.config.TAVILY_API_KEY)
         """
         执行指定的搜索工具
         

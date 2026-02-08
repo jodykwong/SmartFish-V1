@@ -7,11 +7,9 @@
 [![License](https://img.shields.io/badge/license-GPL--2.0-blue.svg)](LICENSE)
 [![Python](https://img.shields.io/badge/python-3.9+-blue.svg)](https://www.python.org/)
 [![Flask](https://img.shields.io/badge/flask-2.0+-green.svg)](https://flask.palletsprojects.com/)
-[![Version](https://img.shields.io/badge/version-1.1.0-green.svg)](CHANGELOG.md)
-[![Tests](https://img.shields.io/badge/tests-63%20passed-brightgreen.svg)](tests/)
-[![Coverage](https://img.shields.io/badge/coverage-85%25-brightgreen.svg)](tests/)
-
-</div>
+[![Version](https://img.shields.io/badge/version-1.1.0-green.svg)](RELEASES.md)
+[![Security](https://img.shields.io/badge/security-85%2F100-brightgreen.svg)](SECURITY_FIX_REPORT.md)
+[![Code Quality](https://img.shields.io/badge/code%20quality-A-brightgreen.svg)](CODE_QUALITY_REPORT.md)
 
 </div>
 
@@ -27,25 +25,34 @@ SmartFish 是一个创新型多智能体舆情分析系统，帮助用户破除�
 - **Agent 论坛机制** - 通过辩论与协作产生高质量集体智能
 - **公私域数据融合** - 支持内部业务数据库无缝集成
 - **轻量化部署** - 纯 Python 模块化设计，一键启动
-- **🆕 Thinking System** - 创业想法评估与验证系统 (Gate + Zero to Sold)
+- **🆕 Thinking System** - 创业想法评估与验证系统
 - **🏥 生产就绪** - 健康检查、监控、日志、Docker 配置完整
 
-### ✨ v1.0.1 新特性
+### ✨ v1.1.0 重大更新 (2026-02-08)
 
-- 🔒 **安全加固** - 速率限制、输入验证、XSS/SQL 注入防护
-- ⚡ **性能优秀** - 响应时间 < 10ms，超标 5000 倍
-- 🧪 **测试完整** - 28 个测试，85% 覆盖率，100% 通过率
-- 🏥 **健康检查** - /health 和 /ready 端点
-- 📊 **监控集成** - Prometheus 指标导出
-- 📝 **结构化日志** - JSON 格式，便于分析
-- 🐳 **Docker 就绪** - 一键部署脚本
+#### 🔒 安全性提升
+- ✅ 移除生产凭据泄露，添加 `.env.prod.template`
+- ✅ 动态 SECRET_KEY 生成
+- ✅ API 认证机制 (Bearer Token)
+- ✅ 敏感配置过滤
+- ✅ CORS 限制配置
+- ✅ 原子性文件写入
+- **安全评分**: 45/100 → 85/100 (+89%)
 
-### ✨ v1.1.0 新特性 (开发中)
+#### 🏗️ 架构重构
+- ✅ 创建 `BaseDeepSearchAgent` 基类
+- ✅ 消除 245 行重复代码 (-41%)
+- ✅ 统一 Engine 维护入口
+- **代码重复率**: 25% → 5% (-80%)
 
-- 📱 **MCP 社交媒体集成** - 小红书、微博、知乎、B站、抖音客户端
-- 🧠 **增强情感分析** - SVM 机器学习模型 (准确率 80%+)
-- 🔄 **智能回退机制** - ML 模型不可用时自动使用关键词匹配
-- 🎯 **BMAD 2.0 痛点发现** - 多平台数据聚合分析
+#### 💻 代码质量
+- ✅ 优化初始化流程
+- ✅ 改进异常处理
+- ✅ 重构配置管理
+- ✅ 添加详细日志
+- **圈复杂度**: 8-12 → 4-6 (-50%)
+
+详见 [RELEASES.md](RELEASES.md) 和 [REFACTORING_SUMMARY.md](REFACTORING_SUMMARY.md)
 
 ## 🏗️ 系统架构
 

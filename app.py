@@ -4,10 +4,10 @@ import os
 # 必须在导入 eventlet 之前设置此环境变量。
 os.environ["EVENTLET_NO_GREENDNS"] = "yes"
 
-import eventlet
-# eventlet.monkey_patch()  # 改用 threading 模式，不需要 monkey_patch
+# 注意: 我们使用 threading 模式而不是 eventlet 的 green threads
+# eventlet 仅用于 SocketIO 的兼容性，不使用 monkey_patch
 
-import os
+import secrets
 from version_manager import version_manager
 import sys
 
@@ -40,7 +40,7 @@ except ImportError as e:
     REPORT_ENGINE_AVAILABLE = False
 
 app = Flask(__name__)
-app.config['SECRET_KEY'] = 'Dedicated-to-creating-a-concise-and-versatile-public-opinion-analysis-platform'
+app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY') or secrets.token_hex(32)
 
 # 配置数据库连接URI（用于Thinking模块）
 try:
@@ -59,7 +59,9 @@ except Exception as e:
 
 # 启用 Gzip 压缩
 Compress(app)
-socketio = SocketIO(app, cors_allowed_origins="*", async_mode='threading')
+# Restrict CORS to specific origins in production
+allowed_origins = os.environ.get('CORS_ORIGINS', '*').split(',')
+socketio = SocketIO(app, cors_allowed_origins=allowed_origins, async_mode='threading')
 
 # 安全响应头
 @app.after_request
@@ -111,31 +113,35 @@ CONFIG_KEYS = [
     'DB_HOST',
     'DB_PORT',
     'DB_USER',
-    'DB_PASSWORD',
     'DB_NAME',
     'DB_CHARSET',
-    'INSIGHT_ENGINE_API_KEY',
     'INSIGHT_ENGINE_BASE_URL',
     'INSIGHT_ENGINE_MODEL_NAME',
-    'MEDIA_ENGINE_API_KEY',
     'MEDIA_ENGINE_BASE_URL',
     'MEDIA_ENGINE_MODEL_NAME',
-    'QUERY_ENGINE_API_KEY',
     'QUERY_ENGINE_BASE_URL',
     'QUERY_ENGINE_MODEL_NAME',
-    'REPORT_ENGINE_API_KEY',
     'REPORT_ENGINE_BASE_URL',
     'REPORT_ENGINE_MODEL_NAME',
-    'FORUM_HOST_API_KEY',
     'FORUM_HOST_BASE_URL',
     'FORUM_HOST_MODEL_NAME',
-    'KEYWORD_OPTIMIZER_API_KEY',
     'KEYWORD_OPTIMIZER_BASE_URL',
     'KEYWORD_OPTIMIZER_MODEL_NAME',
+    'SEARCH_TOOL_TYPE'
+]
+
+SENSITIVE_KEYS = [
+    'DB_PASSWORD',
+    'INSIGHT_ENGINE_API_KEY',
+    'MEDIA_ENGINE_API_KEY',
+    'QUERY_ENGINE_API_KEY',
+    'REPORT_ENGINE_API_KEY',
+    'FORUM_HOST_API_KEY',
+    'KEYWORD_OPTIMIZER_API_KEY',
     'TAVILY_API_KEY',
-    'SEARCH_TOOL_TYPE',
     'BOCHA_WEB_SEARCH_API_KEY',
-    'ANSPIRE_API_KEY'
+    'ANSPIRE_API_KEY',
+    'SECRET_KEY'
 ]
 
 
@@ -188,14 +194,27 @@ def _serialize_config_value(value):
     if value is None:
         return 'None'
 
+def _escape_value(value):
+    """Escape a configuration value for .env file format."""
+    if value is None or value == '':
+        return ''
+    elif isinstance(value, (int, float)):
+        return str(value)
+    elif isinstance(value, bool):
+        return 'True' if value else 'False'
+    
     value_str = str(value)
-    escaped = value_str.replace('\\', '\\\\').replace('"', '\\"')
-    return f'"{escaped}"'
+    # 如果包含空格或特殊字符，需要引号
+    if ' ' in value_str or '#' in value_str:
+        escaped = value_str.replace('\\', '\\\\').replace('"', '\\"')
+        return f'"{escaped}"'
+    return value_str
 
 
 def write_config_values(updates):
     """Persist configuration updates to .env file (Pydantic Settings source)."""
     from pathlib import Path
+    import tempfile
     
     # 确定 .env 文件路径（与 config.py 中的逻辑一致）
     project_root = Path(__file__).resolve().parent
@@ -212,26 +231,12 @@ def write_config_values(updates):
             line_stripped = line.strip()
             if line_stripped and not line_stripped.startswith('#'):
                 if '=' in line_stripped:
-                    key = line_stripped.split('=')[0].strip()
+                    key = line_stripped.split('=', 1)[0].strip()
                     env_key_indices[key] = i
     
     # 更新或添加配置项
     for key, raw_value in updates.items():
-        # 格式化值用于 .env 文件（不需要引号，除非是字符串且包含空格）
-        if raw_value is None or raw_value == '':
-            env_value = ''
-        elif isinstance(raw_value, (int, float)):
-            env_value = str(raw_value)
-        elif isinstance(raw_value, bool):
-            env_value = 'True' if raw_value else 'False'
-        else:
-            value_str = str(raw_value)
-            # 如果包含空格或特殊字符，需要引号
-            if ' ' in value_str or '\n' in value_str or '#' in value_str:
-                escaped = value_str.replace('\\', '\\\\').replace('"', '\\"')
-                env_value = f'"{escaped}"'
-            else:
-                env_value = value_str
+        env_value = _escape_value(raw_value)
         
         # 更新或添加配置项
         if key in env_key_indices:
@@ -241,9 +246,16 @@ def write_config_values(updates):
             # 添加新行到文件末尾
             env_lines.append(f'{key}={env_value}')
     
-    # 写入 .env 文件
+    # 原子性写入 .env 文件
     env_file_path.parent.mkdir(parents=True, exist_ok=True)
-    env_file_path.write_text('\n'.join(env_lines) + '\n', encoding='utf-8')
+    with tempfile.NamedTemporaryFile(mode='w', encoding='utf-8', 
+                                      dir=env_file_path.parent, 
+                                      delete=False) as tmp_file:
+        tmp_file.write('\n'.join(env_lines) + '\n')
+        tmp_path = Path(tmp_file.name)
+    
+    # 原子性替换
+    tmp_path.replace(env_file_path)
     
     # 重新加载配置模块（这会重新读取 .env 文件并创建新的 Settings 实例）
     _load_config_module()
@@ -297,37 +309,40 @@ def initialize_system_components():
     errors = []
     
     spider = MindSpider()
-    if spider.initialize_database():
-        logger.info("数据库初始化成功")
-    else:
+    if not spider.initialize_database():
         logger.error("数据库初始化失败")
+        errors.append("MindSpider 数据库初始化失败")
+    else:
+        logger.info("数据库初始化成功")
 
     try:
         stop_forum_engine()
         logs.append("已停止 ForumEngine 监控器以避免文件冲突")
-    except Exception as exc:  # pragma: no cover - 安全捕获
+    except Exception as exc:
         message = f"停止 ForumEngine 时发生异常: {exc}"
         logs.append(message)
-        logger.exception(message)
+        logger.warning(message)
 
     processes['forum']['status'] = 'stopped'
 
     for app_name, script_path in STREAMLIT_SCRIPTS.items():
         logs.append(f"检查文件: {script_path}")
-        if os.path.exists(script_path):
-            success, message = start_streamlit_app(app_name, script_path, processes[app_name]['port'])
-            logs.append(f"{app_name}: {message}")
-            if success:
-                startup_success, startup_message = wait_for_app_startup(app_name, 30)
-                logs.append(f"{app_name} 启动检查: {startup_message}")
-                if not startup_success:
-                    errors.append(f"{app_name} 启动失败: {startup_message}")
-            else:
-                errors.append(f"{app_name} 启动失败: {message}")
-        else:
+        if not os.path.exists(script_path):
             msg = f"文件不存在: {script_path}"
             logs.append(f"错误: {msg}")
             errors.append(f"{app_name}: {msg}")
+            continue
+            
+        success, message = start_streamlit_app(app_name, script_path, processes[app_name]['port'])
+        logs.append(f"{app_name}: {message}")
+        if not success:
+            errors.append(f"{app_name} 启动失败: {message}")
+            continue
+            
+        startup_success, startup_message = wait_for_app_startup(app_name, 30)
+        logs.append(f"{app_name} 启动检查: {startup_message}")
+        if not startup_success:
+            errors.append(f"{app_name} 启动失败: {startup_message}")
 
     forum_started = False
     try:
@@ -335,23 +350,24 @@ def initialize_system_components():
         processes['forum']['status'] = 'running'
         logs.append("ForumEngine 启动完成")
         forum_started = True
-    except Exception as exc:  # pragma: no cover - 保底捕获
+    except Exception as exc:
         error_msg = f"ForumEngine 启动失败: {exc}"
         logs.append(error_msg)
         errors.append(error_msg)
 
     if REPORT_ENGINE_AVAILABLE:
         try:
-            if initialize_report_engine():
-                logs.append("ReportEngine 初始化成功")
-            else:
+            if not initialize_report_engine():
                 msg = "ReportEngine 初始化失败"
                 logs.append(msg)
                 errors.append(msg)
-        except Exception as exc:  # pragma: no cover
+            else:
+                logs.append("ReportEngine 初始化成功")
+        except Exception as exc:
             msg = f"ReportEngine 初始化异常: {exc}"
             logs.append(msg)
             errors.append(msg)
+            logger.exception("ReportEngine 初始化失败")
 
     if errors:
         cleanup_processes()
@@ -359,8 +375,8 @@ def initialize_system_components():
         if forum_started:
             try:
                 stop_forum_engine()
-            except Exception:  # pragma: no cover
-                logger.exception("停止ForumEngine失败")
+            except Exception as exc:
+                logger.error(f"停止ForumEngine失败: {exc}")
         return False, logs, errors
 
     return True, logs, []
@@ -370,17 +386,10 @@ def init_forum_log():
     """初始化forum.log文件"""
     try:
         forum_log_file = LOG_DIR / "forum.log"
-        # 检查文件不存在则创建并且写一个开始，存在就清空写一个开始
-        if not forum_log_file.exists():
-            with open(forum_log_file, 'w', encoding='utf-8') as f:
-                start_time = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-                f.write(f"=== ForumEngine 系统初始化 - {start_time} ===\n")
-            logger.info(f"ForumEngine: forum.log 已初始化")
-        else:
-            with open(forum_log_file, 'w', encoding='utf-8') as f:
-                start_time = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-                f.write(f"=== ForumEngine 系统初始化 - {start_time} ===\n")
-            logger.info(f"ForumEngine: forum.log 已初始化")
+        with open(forum_log_file, 'w', encoding='utf-8') as f:
+            start_time = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+            f.write(f"=== ForumEngine 系统初始化 - {start_time} ===\n")
+        logger.info("ForumEngine: forum.log 已初始化")
     except Exception as e:
         logger.exception(f"ForumEngine: 初始化forum.log失败: {e}")
 
@@ -933,7 +942,7 @@ def _start_async_shutdown(cleanup_timeout: float = 3.0):
 
     def _force_exit():
         _log_shutdown_step("关机超时，触发强制退出")
-        os._exit(0)
+        sys.exit(1)
 
     # 硬超时保护，即便清理线程异常也能退出
     hard_timeout = cleanup_timeout + 2.0
@@ -1316,10 +1325,12 @@ def search():
 
 @app.route('/api/config', methods=['GET'])
 def get_config():
-    """Expose selected configuration values to the frontend."""
+    """Expose selected configuration values to the frontend (non-sensitive only)."""
     try:
         config_values = read_config_values()
-        return jsonify({'success': True, 'config': config_values})
+        # Filter out sensitive keys
+        safe_config = {k: v for k, v in config_values.items() if k not in SENSITIVE_KEYS}
+        return jsonify({'success': True, 'config': safe_config})
     except Exception as exc:
         logger.exception("读取配置失败")
         return jsonify({'success': False, 'message': f'读取配置失败: {exc}'}), 500
@@ -1327,14 +1338,30 @@ def get_config():
 
 @app.route('/api/config', methods=['POST'])
 def update_config():
-    """Update configuration values and persist them to config.py."""
+    """Update configuration values and persist them to config.py. Requires admin token."""
+    # Simple token-based authentication
+    admin_token = os.environ.get('ADMIN_TOKEN')
+    if not admin_token:
+        return jsonify({'success': False, 'message': '管理功能未启用'}), 403
+    
+    auth_header = request.headers.get('Authorization')
+    if not auth_header or not auth_header.startswith('Bearer '):
+        return jsonify({'success': False, 'message': '需要认证'}), 401
+    
+    token = auth_header.split(' ', 1)[1]
+    if token != admin_token:
+        return jsonify({'success': False, 'message': '认证失败'}), 401
+    
     payload = request.get_json(silent=True) or {}
     if not isinstance(payload, dict) or not payload:
         return jsonify({'success': False, 'message': '请求体不能为空'}), 400
 
     updates = {}
     for key, value in payload.items():
-        if key in CONFIG_KEYS:
+        if key in CONFIG_KEYS or key in SENSITIVE_KEYS:
+            # Validate value doesn't contain dangerous characters
+            if isinstance(value, str) and ('\n' in value or '\r' in value):
+                return jsonify({'success': False, 'message': f'配置值不能包含换行符: {key}'}), 400
             updates[key] = value if value is not None else ''
 
     if not updates:
@@ -1362,9 +1389,26 @@ def get_system_status():
 
 @app.route('/api/system/start', methods=['POST'])
 def start_system():
-    """在接收到请求后启动完整系统。"""
-    allowed, message = _prepare_system_start()
-    if not allowed:
+    """启动所有系统组件。需要管理员认证。"""
+    # Authentication check
+    admin_token = os.environ.get('ADMIN_TOKEN')
+    if not admin_token:
+        return jsonify({'success': False, 'message': '管理功能未启用'}), 403
+    
+    auth_header = request.headers.get('Authorization')
+    if not auth_header or not auth_header.startswith('Bearer '):
+        return jsonify({'success': False, 'message': '需要认证'}), 401
+    
+    token = auth_header.split(' ', 1)[1]
+    if token != admin_token:
+        return jsonify({'success': False, 'message': '认证失败'}), 401
+    
+    state = _get_system_state()
+    if state['starting']:
+        return jsonify({'success': False, 'message': '系统正在启动/重启，请稍候'}), 400
+
+    if state['started']:
+        message = '系统已启动，无需重复启动'
         return jsonify({'success': False, 'message': message}), 400
 
     try:
@@ -1389,7 +1433,20 @@ def start_system():
 
 @app.route('/api/system/shutdown', methods=['POST'])
 def shutdown_system():
-    """优雅停止所有组件并关闭当前服务进程。"""
+    """优雅停止所有组件并关闭当前服务进程。需要管理员认证。"""
+    # Authentication check
+    admin_token = os.environ.get('ADMIN_TOKEN')
+    if not admin_token:
+        return jsonify({'success': False, 'message': '管理功能未启用'}), 403
+    
+    auth_header = request.headers.get('Authorization')
+    if not auth_header or not auth_header.startswith('Bearer '):
+        return jsonify({'success': False, 'message': '需要认证'}), 401
+    
+    token = auth_header.split(' ', 1)[1]
+    if token != admin_token:
+        return jsonify({'success': False, 'message': '认证失败'}), 401
+    
     state = _get_system_state()
     if state['starting']:
         return jsonify({'success': False, 'message': '系统正在启动/重启，请稍候'}), 400
