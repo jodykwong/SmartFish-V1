@@ -1,0 +1,20 @@
+scenarios:
+  - name: "大促备战"
+    keywords: ["双11", "618", "大促", "活动", "促销"]
+    weight: 1.2
+  
+  - name: "日常运营"
+    keywords: ["日常", "常规", "维护", "每天", "天天"]
+    weight: 0.8
+  
+  - name: "新品上线"
+    keywords: ["新品", "上新", "发布", "首发"]
+    weight: 1.0
+  
+  - name: "数据分析"
+    keywords: ["数据", "分析", "报表", "指标", "统计"]
+    weight: 1.0
+  
+  - name: "用户增长"
+    keywords: ["增长", "拉新", "获客", "留存", "活跃"]
+    weight: 1.1

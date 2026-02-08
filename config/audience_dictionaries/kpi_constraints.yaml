@@ -1,0 +1,20 @@
+kpi_constraints:
+  - name: "GMV"
+    keywords: ["GMV", "销售额", "成交额", "营收"]
+    weight: 1.2
+  
+  - name: "转化率"
+    keywords: ["转化", "转化率", "CVR", "成单率"]
+    weight: 1.0
+  
+  - name: "ROI"
+    keywords: ["ROI", "投产比", "回报率", "效果"]
+    weight: 1.1
+  
+  - name: "用户增长"
+    keywords: ["增长", "拉新", "获客", "DAU", "MAU"]
+    weight: 1.0
+  
+  - name: "留存率"
+    keywords: ["留存", "复购", "回访", "粘性"]
+    weight: 0.9

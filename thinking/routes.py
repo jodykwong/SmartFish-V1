@@ -2,6 +2,7 @@ from flask import Blueprint, request, jsonify, session, send_file, render_templa
 from markupsafe import escape
 from thinking.services.entry_service import EntryService
 from thinking.services.gate_service import GateService
+from thinking.services.audience_service import AudienceService
 from thinking.services.routing_service import RoutingService
 from thinking.services.artifact_service import ArtifactService
 from thinking.services.weekly_review_service import WeeklyReviewService
@@ -402,5 +403,112 @@ def generate_market_review(entry_id):
     try:
         filepath = zts_service.generate_market_review(entry, review_data)
         return jsonify({'success': True, 'filepath': filepath})
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+
+# ==================== Audience First API ====================
+
+@thinking_bp.route('/entries/<int:entry_id>/audience-analysis', methods=['POST'])
+def analyze_audiences(entry_id):
+    """触发受众分析"""
+    user_id = get_current_user_id()
+    entry = EntryService.get_entry(entry_id, user_id)
+    
+    if not entry:
+        return jsonify({'error': '条目不存在'}), 404
+    
+    data = request.json
+    raw_data = data.get('raw_data', [])
+    max_clusters = data.get('max_clusters', 5)
+    
+    try:
+        clusters = AudienceService.analyze_audiences(entry_id, raw_data, max_clusters)
+        return jsonify({
+            'success': True,
+            'cluster_count': len(clusters),
+            'clusters': clusters
+        })
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+
+@thinking_bp.route('/entries/<int:entry_id>/audience-clusters', methods=['GET'])
+def get_audience_clusters(entry_id):
+    """获取受众簇列表"""
+    user_id = get_current_user_id()
+    entry = EntryService.get_entry(entry_id, user_id)
+    
+    if not entry:
+        return jsonify({'error': '条目不存在'}), 404
+    
+    try:
+        clusters = AudienceService.get_clusters_by_entry(entry_id)
+        return jsonify({
+            'success': True,
+            'clusters': clusters
+        })
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+
+@thinking_bp.route('/entries/<int:entry_id>/audience-top', methods=['GET'])
+def get_top_audiences(entry_id):
+    """获取Top N受众簇"""
+    user_id = get_current_user_id()
+    entry = EntryService.get_entry(entry_id, user_id)
+    
+    if not entry:
+        return jsonify({'error': '条目不存在'}), 404
+    
+    top_n = request.args.get('top_n', 2, type=int)
+    
+    try:
+        clusters = AudienceService.get_top_clusters(entry_id, top_n)
+        return jsonify({
+            'success': True,
+            'top_clusters': clusters
+        })
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+
+@thinking_bp.route('/entries/<int:entry_id>/audience-report', methods=['GET'])
+def get_audience_report(entry_id):
+    """获取受众分析报告"""
+    user_id = get_current_user_id()
+    entry = EntryService.get_entry(entry_id, user_id)
+    
+    if not entry:
+        return jsonify({'error': '条目不存在'}), 404
+    
+    try:
+        report = AudienceService.generate_report(entry_id)
+        return jsonify({
+            'success': True,
+            'report': report
+        })
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+
+@thinking_bp.route('/entries/<int:entry_id>/audience-debate', methods=['POST'])
+def debate_audience_clusters(entry_id):
+    """对受众簇进行辩论"""
+    user_id = get_current_user_id()
+    entry = EntryService.get_entry(entry_id, user_id)
+    
+    if not entry:
+        return jsonify({'error': '条目不存在'}), 404
+    
+    data = request.json or {}
+    top_n = data.get('top_n', 2)
+    
+    try:
+        debates = AudienceService.debate_clusters(entry_id, top_n=top_n)
+        return jsonify({
+            'success': True,
+            'debates': debates
+        })
     except Exception as e:
         return jsonify({'error': str(e)}), 500

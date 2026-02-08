@@ -1,0 +1,20 @@
+roles:
+  - name: "电商运营"
+    keywords: ["运营", "电商", "店铺", "商家", "卖家"]
+    weight: 1.0
+  
+  - name: "产品经理"
+    keywords: ["产品", "PM", "需求", "PRD", "产品经理"]
+    weight: 1.0
+  
+  - name: "市场营销"
+    keywords: ["市场", "营销", "推广", "投放", "广告"]
+    weight: 1.0
+  
+  - name: "内容创作者"
+    keywords: ["创作", "博主", "UP主", "自媒体", "内容"]
+    weight: 1.0
+  
+  - name: "技术开发"
+    keywords: ["开发", "程序员", "工程师", "技术", "码农"]
+    weight: 0.8
